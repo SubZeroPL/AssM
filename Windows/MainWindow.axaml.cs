@@ -80,6 +80,7 @@ public partial class MainWindow : Window
     {
         if (DataGridGameList?.SelectedItem is not Game game) return;
         Functions.LoadExistingData(TextBoxOutputDirectory.Text, game);
+        DataGridGameList.CollectionView.Refresh();
 
         TextTitle.Text = game.Title;
         TextDescription.Text = game.Description;
@@ -125,10 +126,7 @@ public partial class MainWindow : Window
         }
 
         var progress = new ProgressWindow();
-        // this is deliberate
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-        progress.ShowDialog(this);
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        _ = progress.ShowDialog(this);
         try
         {
             await progress.Process(GameList.ToList(), TextBoxOutputDirectory.Text,
@@ -146,7 +144,7 @@ public partial class MainWindow : Window
         DataGridGameList.CollectionView.Refresh();
     }
 
-    private async void SelectButton_OnClick(object? sender, RoutedEventArgs e)
+    private async void SelectOutputFolderButton_OnClick(object? sender, RoutedEventArgs e)
     {
         var fpo = new FolderPickerOpenOptions
         {
@@ -157,5 +155,10 @@ public partial class MainWindow : Window
         if (!dirs.Any()) return;
         var dir = dirs[0];
         TextBoxOutputDirectory.Text = dir.Path.LocalPath;
+        foreach (var game in GameList)
+        {
+            Functions.LoadExistingData(TextBoxOutputDirectory.Text, game);    
+        }
+        DataGridGameList.CollectionView.Refresh();
     }
 }
