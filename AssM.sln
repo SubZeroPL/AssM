@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssM", "AssM.csproj", "{470F4D1C-5EA7-4A46-8D56-112F3CAAFB3D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscTools", "..\DiscTools\DiscTools\DiscTools.csproj", "{56C3BB4A-EE3F-4434-B7AE-3D65420EB5DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Avalonia.Labs.Gif", "..\Avalonia.Labs\src\Avalonia.Labs.Gif\Avalonia.Labs.Gif.csproj", "{72710B01-635B-4B09-8BF0-0A08FF864948}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{470F4D1C-5EA7-4A46-8D56-112F3CAAFB3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{470F4D1C-5EA7-4A46-8D56-112F3CAAFB3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{470F4D1C-5EA7-4A46-8D56-112F3CAAFB3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{470F4D1C-5EA7-4A46-8D56-112F3CAAFB3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56C3BB4A-EE3F-4434-B7AE-3D65420EB5DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56C3BB4A-EE3F-4434-B7AE-3D65420EB5DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56C3BB4A-EE3F-4434-B7AE-3D65420EB5DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56C3BB4A-EE3F-4434-B7AE-3D65420EB5DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72710B01-635B-4B09-8BF0-0A08FF864948}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72710B01-635B-4B09-8BF0-0A08FF864948}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72710B01-635B-4B09-8BF0-0A08FF864948}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72710B01-635B-4B09-8BF0-0A08FF864948}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

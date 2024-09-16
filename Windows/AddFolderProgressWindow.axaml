@@ -1,0 +1,22 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:gif="clr-namespace:Avalonia.Labs.Gif;assembly=Avalonia.Labs.Gif"
+        mc:Ignorable="d" d:DesignWidth="300"
+        x:Class="AssM.Windows.AddFolderProgressWindow"
+        Width="300" WindowStartupLocation="CenterOwner" SizeToContent="Height" ShowInTaskbar="False" CanResize="False"
+        Title="Adding folder contents">
+    <StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Label>Processing folder:</Label>
+            <Label Name="LabelFolderName"></Label>
+        </StackPanel>
+        <Panel HorizontalAlignment="Center">
+            <gif:GifImage Source="avares://AssM/Assets/loading.gif" />
+        </Panel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
+            <Button>Cancel</Button>
+        </StackPanel>
+    </StackPanel>
+</Window>

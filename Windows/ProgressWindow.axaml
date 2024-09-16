@@ -1,0 +1,27 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="250"
+        x:Class="AssM.Windows.ProgressWindow"
+        Title="Progress" SizeToContent="Height" ShowInTaskbar="False" CanResize="False"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="5">
+        <StackPanel Orientation="Horizontal">
+            <Label>Processing games:</Label><Label Name="LabelIndex">0</Label><Label>of</Label>
+            <Label Name="LabelAll">0</Label>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Label>Title:</Label><Label Name="LabelGameTitle" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Label>Step:</Label><Label Name="LabelStep" />
+        </StackPanel>
+        <Panel Margin="5">
+            <ProgressBar Name="ProgressBarProgress" Minimum="0" Maximum="100" Value="0" ShowProgressText="True" />
+        </Panel>
+        <Panel HorizontalAlignment="Center">
+            <Button>Cancel</Button>
+        </Panel>
+    </StackPanel>
+</Window>
