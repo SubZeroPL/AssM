@@ -5,6 +5,7 @@
         xmlns:gif="clr-namespace:Avalonia.Labs.Gif;assembly=Avalonia.Labs.Gif"
         mc:Ignorable="d" d:DesignWidth="300"
         x:Class="AssM.Windows.AddFolderProgressWindow"
+        Closing="Window_OnClosing"
         Width="300" WindowStartupLocation="CenterOwner" SizeToContent="Height" ShowInTaskbar="False" CanResize="False"
         Title="Adding folder contents">
     <StackPanel>
@@ -16,7 +17,7 @@
             <gif:GifImage Source="avares://AssM/Assets/loading.gif" />
         </Panel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
-            <Button>Cancel</Button>
+            <Button Click="CancelButton_OnClick">Cancel</Button>
         </StackPanel>
     </StackPanel>
 </Window>

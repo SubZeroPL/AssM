@@ -1,16 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using AssM.Classes;
 using AssM.Data;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
-using DiscTools;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 
@@ -53,7 +50,10 @@ public partial class MainWindow : Window
         var files = await GetTopLevel(this)?.StorageProvider.OpenFilePickerAsync(fpo)!;
         foreach (var file in files)
         {
-            await Functions.AddGameToList(file.Path.LocalPath, GameList);
+            var game = Functions.AddGameToList(file.Path.LocalPath, CheckBoxGetTitleFromCue.IsChecked ?? false,
+                GameList);
+            if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) continue;
+            Functions.LoadExistingData(TextBoxOutputDirectory.Text, game);
         }
     }
 
@@ -70,7 +70,7 @@ public partial class MainWindow : Window
 
     private async void AddFolderButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        var fpo = new FolderPickerOpenOptions()
+        var fpo = new FolderPickerOpenOptions
         {
             Title = "Select folder with images"
         };
@@ -79,7 +79,7 @@ public partial class MainWindow : Window
             .ToList();
         var progress = new AddFolderProgressWindow();
         _ = progress.ShowDialog(this);
-        await progress.Process(dirs, GameList, TextBoxOutputDirectory.Text);
+        await progress.Process(dirs, CheckBoxGetTitleFromCue.IsChecked ?? false, GameList, TextBoxOutputDirectory.Text);
         progress.Close();
         DataGridGameList.CollectionView.Refresh();
     }
@@ -173,8 +173,9 @@ public partial class MainWindow : Window
         TextBoxOutputDirectory.Text = dir.Path.LocalPath;
         foreach (var game in GameList)
         {
-            Functions.LoadExistingData(TextBoxOutputDirectory.Text, game);    
+            Functions.LoadExistingData(TextBoxOutputDirectory.Text, game);
         }
+
         DataGridGameList.CollectionView.Refresh();
     }
 

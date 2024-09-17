@@ -1,38 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using AssM.Classes;
 using AssM.Data;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 
 namespace AssM.Windows;
 
 public partial class AddFolderProgressWindow : Window
 {
+    private bool _cancelled;
+
     public AddFolderProgressWindow()
     {
         InitializeComponent();
     }
 
-    public async Task Process(List<string> dirs, ObservableCollection<Game> gameList, string? ouputFolder)
+    public async Task Process(List<string> dirs, bool getTitleFromCue, ObservableCollection<Game> gameList,
+        string? ouputFolder)
     {
         var cueFiles = new List<string>();
         foreach (var dir in dirs)
         {
+            if (_cancelled) return;
             LabelFolderName.Content = dir;
             await Task.Run(() => cueFiles.AddRange(Functions.GetCueFilesInDirectory(dir)));
         }
 
         foreach (var cueFile in cueFiles)
         {
-            await Task.Run(() => Functions.AddGameToList(cueFile, gameList));
+            if (_cancelled) return;
+            await Task.Run(() => Functions.AddGameToList(cueFile, getTitleFromCue, gameList));
         }
 
         if (ouputFolder == null) return;
         foreach (var game in gameList)
         {
-            Functions.LoadExistingData(ouputFolder, game);    
+            if (_cancelled) return;
+            Functions.LoadExistingData(ouputFolder, game);
         }
+    }
+
+    private void CancelButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _cancelled = true;
+    }
+
+    private void Window_OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        _cancelled = true;
+        if (!e.IsProgrammatic) e.Cancel = true;
     }
 }

@@ -9,12 +9,15 @@ using System.Threading.Tasks;
 using AssM.Classes;
 using AssM.Data;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 
 namespace AssM.Windows;
 
 public partial class ProgressWindow : Window
 {
+    private bool _cancelled;
+
     public ProgressWindow()
     {
         InitializeComponent();
@@ -45,9 +48,10 @@ public partial class ProgressWindow : Window
         Dispatcher.UIThread.InvokeAsync(() => { ProgressBarProgress.Value = progress; });
     }
 
-    private static async Task ConvertSingleChd(Game game, string outputPathRoot, bool overwriteChds,
+    private async Task ConvertSingleChd(Game game, string outputPathRoot, bool overwriteChds,
         Action<double> reportProgress)
     {
+        if (_cancelled) return;
         var chdFile = Path.GetFileName(Path.ChangeExtension(game.CuePath, "chd"));
         var chdPath = Path.Combine(outputPathRoot, Functions.OutputPath(game), chdFile);
         if (File.Exists(chdPath) && !overwriteChds) return;
@@ -66,12 +70,21 @@ public partial class ProgressWindow : Window
             },
             EnableRaisingEvents = true
         };
+
+        if (_cancelled) return;
         await Task.Run(async () =>
         {
             chdmanConvert.Start();
 
             while (!chdmanConvert.StandardError.EndOfStream)
             {
+                if (_cancelled)
+                {
+                    if (!chdmanConvert.HasExited) chdmanConvert.Kill();
+                    await chdmanConvert.WaitForExitAsync();
+                    File.Delete(chdPath);
+                    return;
+                }
                 var line = await chdmanConvert.StandardError.ReadLineAsync() ?? string.Empty;
                 if (line.Contains(Constants.ChdManComplete))
                 {
@@ -90,13 +103,15 @@ public partial class ProgressWindow : Window
                 reportProgress(progress);
             }
 
-            // await chdmanConvert.WaitForExitAsync();
+            await chdmanConvert.WaitForExitAsync();
 
             if (chdmanConvert.ExitCode != 0)
             {
+                if (_cancelled) return;
                 var output = new List<string>();
                 while (!chdmanConvert.StandardOutput.EndOfStream)
                 {
+                    if (_cancelled) return;
                     var line = await chdmanConvert.StandardOutput.ReadLineAsync() ?? string.Empty;
                     output.Add(line);
                 }
@@ -110,10 +125,11 @@ public partial class ProgressWindow : Window
         });
     }
 
-    private static async Task CalculateTracksMd5(Game game, string outputPathRoot, bool overwriteReadmes,
+    private async Task CalculateTracksMd5(Game game, string outputPathRoot, bool overwriteReadmes,
         Action<double> reportProgress)
     {
         reportProgress(0.0);
+        if (_cancelled) return;
         var readmePath = Path.Combine(outputPathRoot, Functions.OutputPath(game), Constants.ReadmeFile);
         if (File.Exists(readmePath) && !overwriteReadmes) return;
         var cuefile = game.CuePath;
@@ -127,10 +143,12 @@ public partial class ProgressWindow : Window
             into bin
             select Path.Combine(Path.GetDirectoryName(cuefile)!, bin));
 
+        if (_cancelled) return;
         var md5 = MD5.Create();
         if (game.ChdData.TrackInfo.Count != 0) game.ChdData.TrackInfo.Clear();
         for (var i = 0; i < bins.Count; i++)
         {
+            if (_cancelled) return;
             var bin = bins[i];
             await using var fs = File.OpenRead(bin);
             var hashArray = await md5.ComputeHashAsync(fs);
@@ -142,15 +160,17 @@ public partial class ProgressWindow : Window
         reportProgress(100.0);
     }
 
-    private static void GetChdManInfo(Game game, string outputPathRoot)
+    private void GetChdManInfo(Game game, string outputPathRoot)
     {
+        if (_cancelled) return;
         var chdFile = Path.GetFileName(Path.ChangeExtension(game.CuePath, "chd"));
         var chdPath = Path.Combine(outputPathRoot, Functions.OutputPath(game), chdFile);
         Functions.LoadChdManInfo(chdPath, game);
     }
 
-    private static void GenerateReadme(Game game, string outputPathRoot, bool overwriteReadmes)
+    private void GenerateReadme(Game game, string outputPathRoot, bool overwriteReadmes)
     {
+        if (_cancelled) return;
         var readmePath = Path.Combine(outputPathRoot, Functions.OutputPath(game), Constants.ReadmeFile);
         if (File.Exists(readmePath) && !overwriteReadmes) return;
         var template = File.ReadAllText(Constants.ReadmeTemplate);
@@ -162,5 +182,16 @@ public partial class ProgressWindow : Window
         template = template.Replace(Constants.ReadmeGameDescription, game.Description);
         File.WriteAllText(readmePath, template);
         game.ReadmeCreated = true;
+    }
+
+    private void CancelButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        _cancelled = true;
+    }
+
+    private void Window_OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        _cancelled = true;
+        if (!e.IsProgrammatic) e.Cancel = true;
     }
 }
