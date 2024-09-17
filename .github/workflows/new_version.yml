@@ -63,7 +63,7 @@ jobs:
         uses: ncipollo/release-action@v1
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.draft_release && !inputs.no_publish }}
         with:
-          artifacts: AssM_${{ steps.get_version.outputs.version }}.zip
+          artifacts: bin/Release/net8.0/win-x64/publish/AssM_${{ steps.get_version.outputs.version }}.zip
           name: AssM Release v${{ steps.get_version.outputs.version }}
           tag: v${{ steps.get_version.outputs.version }}_pre
           commit: master
@@ -76,7 +76,7 @@ jobs:
         uses: ncipollo/release-action@v1
         if: ${{ !inputs.draft_release && !inputs.no_publish }}
         with:
-          artifacts: AssM_${{ steps.get_version.outputs.version }}.zip
+          artifacts: bin/Release/net8.0/win-x64/publish/AssM_${{ steps.get_version.outputs.version }}.zip
           name: AssM Release v${{ steps.get_version.outputs.version }}
           tag: v${{ steps.get_version.outputs.version }}
           commit: master
