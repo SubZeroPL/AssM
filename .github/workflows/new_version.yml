@@ -47,7 +47,7 @@ jobs:
         with:
           type: 'zip'
           filename: AssM_${{ steps.get_version.outputs.version }}.zip
-          path: bin/Release/net8.0/win-x64/publish/
+          directory: bin/Release/net8.0/win-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
       - name: Create tag
         run: |
