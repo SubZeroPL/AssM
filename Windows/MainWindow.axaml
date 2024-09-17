@@ -80,7 +80,14 @@
             <DataGrid Name="DataGridGameList" AutoGenerateColumns="True" GridLinesVisibility="All"
                       CanUserReorderColumns="True" CanUserResizeColumns="True" IsReadOnly="True" BorderThickness="1"
                       Margin="5" DockPanel.Dock="Left"
+                      SelectionMode="Single"
+                      AutoGeneratingColumn="DataGridGameList_OnAutoGeneratingColumn"
                       SelectionChanged="DataGridGameList_OnSelectionChanged">
+                <DataGrid.ContextFlyout>
+                    <MenuFlyout>
+                        <MenuItem Name="MenuItemShowReadme" Header="Show README" Click="ShowReadmeMenuItem_OnClick"/>
+                    </MenuFlyout>
+                </DataGrid.ContextFlyout>
             </DataGrid>
         </DockPanel>
     </DockPanel>

@@ -1,0 +1,20 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="500"
+        Width="500" Height="500"
+        WindowStartupLocation="CenterOwner"
+        x:Class="AssM.Windows.ReadmePreviewWindow"
+        Title="Readme Preview">
+    <DockPanel Margin="5">
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+            <Label>README file for:</Label>
+            <Label Name="LabelGame"></Label>
+        </StackPanel>
+        <Border BorderThickness="1" CornerRadius="5" BorderBrush="{DynamicResource TextControlBorderBrush}" Margin="5">
+            <md:MarkdownScrollViewer Name="Viewer" Margin="5"></md:MarkdownScrollViewer>
+        </Border>
+    </DockPanel>
+</Window>

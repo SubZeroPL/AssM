@@ -103,6 +103,8 @@ public partial class MainWindow : Window
         LabelSha1.Content = game.ChdData.Sha1Hash;
         LabelDataSha1.Content = game.ChdData.DataSha1Hash;
         TextBoxTrackInfo.Text = game.ChdData.GetTrackInfo();
+
+        MenuItemShowReadme.IsEnabled = game.ReadmeCreated;
     }
 
     private void TextDescription_OnTextInput(object? sender, TextInputEventArgs e)
@@ -174,5 +176,35 @@ public partial class MainWindow : Window
             Functions.LoadExistingData(TextBoxOutputDirectory.Text, game);    
         }
         DataGridGameList.CollectionView.Refresh();
+    }
+
+    private async void ShowReadmeMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataGridGameList.SelectedIndex < 0) return;
+        if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) return;
+        var selected = DataGridGameList.SelectedIndex;
+        var game = GameList[selected];
+        var readmePath = Path.Combine(TextBoxOutputDirectory.Text, Functions.OutputPath(game), Constants.ReadmeFile);
+        if (!File.Exists(readmePath)) return;
+        await new ReadmePreviewWindow(readmePath, game.Title).ShowDialog(this);
+    }
+    
+    private void DataGridGameList_OnAutoGeneratingColumn(object? sender, DataGridAutoGeneratingColumnEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case "ChdData":
+                e.Column.IsVisible = false;
+                break;
+            case "CuePath":
+                e.Column.Header = "Cue Path";
+                break;
+            case "ReadmeCreated":
+                e.Column.Header = "Readme Created";
+                break;
+            case "ChdCreated":
+                e.Column.Header = "CHD Created";
+                break;
+        }
     }
 }
