@@ -214,4 +214,15 @@ public partial class MainWindow : Window
                 break;
         }
     }
+
+    private void MenuItemOpenFolder_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataGridGameList.SelectedIndex < 0) return;
+        if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) return;
+        var selected = DataGridGameList.SelectedIndex;
+        var game = GameList[selected];
+        var outputPath = Path.Combine(TextBoxOutputDirectory.Text, Functions.OutputPath(game));
+        var launcher = GetTopLevel(this)?.Launcher;
+        launcher?.LaunchDirectoryInfoAsync(new DirectoryInfo(outputPath));
+    }
 }

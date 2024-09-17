@@ -87,6 +87,7 @@
                 <DataGrid.ContextFlyout>
                     <MenuFlyout>
                         <MenuItem Name="MenuItemShowReadme" Header="Show README" Click="ShowReadmeMenuItem_OnClick"/>
+                        <MenuItem Name="MenuItemOpenFolder" Header="Open output folder" Click="MenuItemOpenFolder_OnClick"/>
                     </MenuFlyout>
                 </DataGrid.ContextFlyout>
             </DataGrid>
