@@ -17,8 +17,7 @@ public partial class AddFolderProgressWindow : Window
         InitializeComponent();
     }
 
-    public async Task Process(List<string> dirs, bool getTitleFromCue, ObservableCollection<Game> gameList,
-        string? ouputFolder)
+    public async Task Process(List<string> dirs,ObservableCollection<Game> gameList, Configuration configuration)
     {
         var cueFiles = new List<string>();
         foreach (var dir in dirs)
@@ -31,14 +30,14 @@ public partial class AddFolderProgressWindow : Window
         foreach (var cueFile in cueFiles)
         {
             if (_cancelled) return;
-            await Task.Run(() => Functions.AddGameToList(cueFile, getTitleFromCue, gameList));
+            await Task.Run(() => Functions.AddGameToList(cueFile, configuration.GetTitleFromCue, gameList));
         }
 
-        if (ouputFolder == null) return;
+        if (string.IsNullOrWhiteSpace(configuration.OutputDirectory)) return;
         foreach (var game in gameList)
         {
             if (_cancelled) return;
-            Functions.LoadExistingData(ouputFolder, game);
+            Functions.LoadExistingData(game, configuration);
         }
     }
 

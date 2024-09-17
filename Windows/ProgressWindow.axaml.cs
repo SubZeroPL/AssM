@@ -17,14 +17,18 @@ namespace AssM.Windows;
 public partial class ProgressWindow : Window
 {
     private bool _cancelled;
+    private Configuration _configuration;
 
     public ProgressWindow()
     {
         InitializeComponent();
+        _configuration = new Configuration();
     }
 
-    public async Task Process(List<Game> gameList, string outputPath, bool overwriteChds, bool overwriteReadmes)
+    public async Task Process(List<Game> gameList, Configuration configuration)
     {
+        _configuration = configuration;
+
         for (var i = 0; i < gameList.Count; i++)
         {
             var game = gameList.ElementAt(i);
@@ -33,13 +37,13 @@ public partial class ProgressWindow : Window
             LabelIndex.Content = i + 1;
             var step = 1;
             LabelStep.Content = Constants.Steps[step++];
-            await ConvertSingleChd(game, outputPath, overwriteChds, UpdateProgress);
+            await ConvertSingleChd(game, UpdateProgress);
             LabelStep.Content = Constants.Steps[step++];
-            await CalculateTracksMd5(game, outputPath, overwriteReadmes, UpdateProgress);
+            await CalculateTracksMd5(game, UpdateProgress);
             LabelStep.Content = Constants.Steps[step++];
-            GetChdManInfo(game, outputPath);
+            GetChdManInfo(game);
             LabelStep.Content = Constants.Steps[step];
-            GenerateReadme(game, outputPath, overwriteReadmes);
+            GenerateReadme(game);
         }
     }
 
@@ -47,14 +51,13 @@ public partial class ProgressWindow : Window
     {
         Dispatcher.UIThread.InvokeAsync(() => { ProgressBarProgress.Value = progress; });
     }
-
-    private async Task ConvertSingleChd(Game game, string outputPathRoot, bool overwriteChds,
-        Action<double> reportProgress)
+    
+    private async Task ConvertSingleChd(Game game, Action<double> reportProgress)
     {
         if (_cancelled) return;
-        var chdFile = Path.GetFileName(Path.ChangeExtension(game.CuePath, "chd"));
-        var chdPath = Path.Combine(outputPathRoot, Functions.OutputPath(game), chdFile);
-        if (File.Exists(chdPath) && !overwriteChds) return;
+        var chdFile = Functions.GetChdName(game, _configuration);
+        var chdPath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), chdFile);
+        if (File.Exists(chdPath) && !_configuration.OverwriteExistingChds) return;
         Directory.CreateDirectory(Path.GetDirectoryName(chdPath) ?? string.Empty);
 
         var chdmanConvert = new Process
@@ -85,6 +88,7 @@ public partial class ProgressWindow : Window
                     File.Delete(chdPath);
                     return;
                 }
+
                 var line = await chdmanConvert.StandardError.ReadLineAsync() ?? string.Empty;
                 if (line.Contains(Constants.ChdManComplete))
                 {
@@ -125,13 +129,12 @@ public partial class ProgressWindow : Window
         });
     }
 
-    private async Task CalculateTracksMd5(Game game, string outputPathRoot, bool overwriteReadmes,
-        Action<double> reportProgress)
+    private async Task CalculateTracksMd5(Game game, Action<double> reportProgress)
     {
         reportProgress(0.0);
         if (_cancelled) return;
-        var readmePath = Path.Combine(outputPathRoot, Functions.OutputPath(game), Constants.ReadmeFile);
-        if (File.Exists(readmePath) && !overwriteReadmes) return;
+        var readmePath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), Constants.ReadmeFile);
+        if (File.Exists(readmePath) && !_configuration.OverwriteExistingReadmes) return;
         var cuefile = game.CuePath;
         var lines = File.ReadLines(cuefile);
         List<string> bins = [];
@@ -160,19 +163,19 @@ public partial class ProgressWindow : Window
         reportProgress(100.0);
     }
 
-    private void GetChdManInfo(Game game, string outputPathRoot)
+    private void GetChdManInfo(Game game)
     {
         if (_cancelled) return;
-        var chdFile = Path.GetFileName(Path.ChangeExtension(game.CuePath, "chd"));
-        var chdPath = Path.Combine(outputPathRoot, Functions.OutputPath(game), chdFile);
+        var chdFile = Functions.GetChdName(game, _configuration);
+        var chdPath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), chdFile);
         Functions.LoadChdManInfo(chdPath, game);
     }
 
-    private void GenerateReadme(Game game, string outputPathRoot, bool overwriteReadmes)
+    private void GenerateReadme(Game game)
     {
         if (_cancelled) return;
-        var readmePath = Path.Combine(outputPathRoot, Functions.OutputPath(game), Constants.ReadmeFile);
-        if (File.Exists(readmePath) && !overwriteReadmes) return;
+        var readmePath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), Constants.ReadmeFile);
+        if (File.Exists(readmePath) && !_configuration.OverwriteExistingReadmes) return;
         var template = File.ReadAllText(Constants.ReadmeTemplate);
         template = template.Replace(Constants.ReadmeGameTitle, game.Title);
         template = template.Replace(Constants.ReadmeGameId, game.Id);
