@@ -36,7 +36,6 @@ public static class Functions
         {
             output.Add(chdmanInfo.StandardOutput.ReadLine() ?? string.Empty);
         }
-        // chdmanInfo.WaitForExit();
 
         /*
             [0]: "chdman - MAME Compressed Hunks of Data (CHD) manager 0.257 (mame0257)"
@@ -74,12 +73,14 @@ public static class Functions
         var chdPath = Path.Combine(path, chdFile);
         var readmePath = Path.Combine(outDir, OutputPath(game), Constants.ReadmeFile);
         if (File.Exists(chdPath)) LoadChdManInfo(chdPath, game);
+        else game.ChdCreated = false;
+        if (!File.Exists(readmePath)) game.ReadmeCreated = false;
 
         if (string.IsNullOrWhiteSpace(game.Description))
         {
             LoadDescriptionFromReadme(readmePath, game);
         }
-        
+
         LoadTitleFromReadme(readmePath, game);
 
         LoadTrackInfoFromReadme(readmePath, game);
