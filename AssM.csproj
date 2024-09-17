@@ -5,41 +5,69 @@
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
+        <Version>1.1.0</Version>
+        <Authors>SubZeroPL</Authors>
+        <PackageProjectUrl>https://github.com/SubZeroPL/AssM/</PackageProjectUrl>
+        <AssemblyVersion>1.1.0</AssemblyVersion>
+        <FileVersion>1.1.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.1.3" />
-        <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.1.3" />
-        <PackageReference Include="Avalonia.Desktop" Version="11.1.3" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.3" />
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.3" />
+        <PackageReference Include="Avalonia" Version="11.1.3"/>
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.1.3"/>
+        <PackageReference Include="Avalonia.Desktop" Version="11.1.3"/>
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.3"/>
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.3"/>
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.3" />
-        <PackageReference Include="MessageBox.Avalonia" Version="3.1.6" />
+        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.3"/>
+        <PackageReference Include="Markdown.Avalonia" Version="11.0.3-a1"/>
+        <PackageReference Include="MessageBox.Avalonia" Version="3.1.6"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <ProjectReference Include="..\Avalonia.Labs\src\Avalonia.Labs.Gif\Avalonia.Labs.Gif.csproj" />
-        <ProjectReference Include="..\DiscTools\DiscTools\DiscTools.csproj" />
+        <ProjectReference Include="DiscTools\DiscTools\DiscTools.csproj"/>
+        <ProjectReference Include="Avalonia.Labs\src\Avalonia.Labs.Gif\Avalonia.Labs.Gif.csproj"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <Content CopyToOutputDirectory="Always" Include="Tools\*" />
-        <Content CopyToOutputDirectory="Always" Include="Templates\README-template.md" />
+        <Content CopyToOutputDirectory="Always" Include="Tools\*"/>
+        <Content CopyToOutputDirectory="Always" Include="Templates\README-template.md"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <AvaloniaResource Include="Assets\**" />
+        <AvaloniaResource Include="Assets\**"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-      <Compile Update="Windows\MainWindow.axaml.cs">
-        <DependentUpon>MainWindow.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
-      <Compile Update="Windows\ProgressWindow.axaml.cs">
-        <DependentUpon>ProgressWindow.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
+        <Compile Update="Windows\MainWindow.axaml.cs">
+            <DependentUpon>MainWindow.axaml</DependentUpon>
+            <SubType>Code</SubType>
+        </Compile>
+        <Compile Update="Windows\ProgressWindow.axaml.cs">
+            <DependentUpon>ProgressWindow.axaml</DependentUpon>
+            <SubType>Code</SubType>
+        </Compile>
+        <Compile Remove="Avalonia.Labs\**"/>
+        <Compile Remove="DiscTools\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <AvaloniaXaml Remove="Avalonia.Labs\**"/>
+        <AvaloniaXaml Remove="DiscTools\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Remove="Avalonia.Labs\**"/>
+        <EmbeddedResource Remove="DiscTools\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Remove="Avalonia.Labs\**"/>
+        <AdditionalFiles Remove="DiscTools\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="Avalonia.Labs\**"/>
+        <None Remove="DiscTools\**"/>
     </ItemGroup>
 </Project>

@@ -4,11 +4,9 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using AssM.Data;
 using Avalonia.Threading;
 using DiscTools;
-using MsBox.Avalonia;
 
 namespace AssM.Classes;
 
@@ -38,7 +36,6 @@ public static class Functions
         {
             output.Add(chdmanInfo.StandardOutput.ReadLine() ?? string.Empty);
         }
-        // chdmanInfo.WaitForExit();
 
         /*
             [0]: "chdman - MAME Compressed Hunks of Data (CHD) manager 0.257 (mame0257)"
@@ -76,12 +73,14 @@ public static class Functions
         var chdPath = Path.Combine(path, chdFile);
         var readmePath = Path.Combine(outDir, OutputPath(game), Constants.ReadmeFile);
         if (File.Exists(chdPath)) LoadChdManInfo(chdPath, game);
+        else game.ChdCreated = false;
+        if (!File.Exists(readmePath)) game.ReadmeCreated = false;
 
         if (string.IsNullOrWhiteSpace(game.Description))
         {
             LoadDescriptionFromReadme(readmePath, game);
         }
-        
+
         LoadTitleFromReadme(readmePath, game);
 
         LoadTrackInfoFromReadme(readmePath, game);
@@ -130,23 +129,16 @@ public static class Functions
         return result;
     }
 
-    public static async Task AddGameToList(string cuePath, ObservableCollection<Game> gameList)
+    public static Game AddGameToList(string cuePath, bool getTitleFromCue, ObservableCollection<Game> gameList)
     {
-        try
+        var di = DiscInspector.ScanDisc(cuePath);
+        var title = getTitleFromCue ? Path.GetFileNameWithoutExtension(cuePath) : di.Data.GameTitle;
+        var game = new Game
         {
-            var di = DiscInspector.ScanDisc(cuePath);
-            Dispatcher.UIThread.Invoke(() =>
-            {
-                gameList.Add(new Game
-                {
-                    Title = di.Data.GameTitle, Id = di.Data.SerialNumber, Platform = di.DetectedDiscType,
-                    CuePath = cuePath
-                });
-            });
-        }
-        catch (Exception ex)
-        {
-            await MessageBoxManager.GetMessageBoxStandard(Path.GetFileName(cuePath), ex.Message).ShowAsync();
-        }
+            Title = title, Id = di.Data.SerialNumber, Platform = di.DetectedDiscType,
+            CuePath = cuePath
+        };
+        Dispatcher.UIThread.Invoke(() => { gameList.Add(game); });
+        return game;
     }
 }

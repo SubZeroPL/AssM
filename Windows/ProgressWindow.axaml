@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="250"
         x:Class="AssM.Windows.ProgressWindow"
+        Closing="Window_OnClosing"
         Title="Progress" SizeToContent="Height" ShowInTaskbar="False" CanResize="False"
         WindowStartupLocation="CenterOwner">
     <StackPanel Margin="5">
@@ -21,7 +22,7 @@
             <ProgressBar Name="ProgressBarProgress" Minimum="0" Maximum="100" Value="0" ShowProgressText="True" />
         </Panel>
         <Panel HorizontalAlignment="Center">
-            <Button>Cancel</Button>
+            <Button Click="CancelButton_OnClick">Cancel</Button>
         </Panel>
     </StackPanel>
 </Window>
