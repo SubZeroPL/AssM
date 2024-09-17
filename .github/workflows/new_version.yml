@@ -24,6 +24,7 @@ jobs:
     env:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
+      PROJECT_NAME: AssM
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,20 +32,15 @@ jobs:
           fetch-depth: 0
           submodules: recursive
           show-progress: false
-      - name: Test
-        run: ls
-        shell: pwsh
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Restore projects
-        run: dotnet restore
       - name: Build version
         run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false
       - name: Get version
         id: get_version
-        run: echo "version=$((Select-Xml -Path .\$( $env:PROJECT_NAME )\$( $env:PROJECT_NAME ).csproj -XPath '/Project/PropertyGroup/AssemblyVersion').Node.InnerXML)" >> $env:GITHUB_OUTPUT
+        run: echo "version=$((Select-Xml -Path .\$( $env:PROJECT_NAME ).csproj -XPath '/Project/PropertyGroup/AssemblyVersion').Node.InnerXML)" >> $env:GITHUB_OUTPUT
         shell: pwsh
       - name: Create artifact
         uses: thedoctor0/zip-release@0.7.5
