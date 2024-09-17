@@ -29,8 +29,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: 'recursive'
+          submodules: recursive
           show-progress: false
+      - name: Test
+        run: ls
+        shell: pwsh
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
