@@ -18,7 +18,8 @@ namespace AssM.Windows;
 
 public partial class MainWindow : Window
 {
-    private ObservableCollection<Game> GameList { get; set; } = [];
+    private ObservableCollection<Game> GameList { get; } = [];
+    private Configuration Configuration { get; }
 
     public MainWindow()
     {
@@ -26,6 +27,19 @@ public partial class MainWindow : Window
         DataGridGameList.ItemsSource = GameList;
         TextTitle.AddHandler(TextInputEvent, TextTitle_OnTextInput, RoutingStrategies.Tunnel);
         TextDescription.AddHandler(TextInputEvent, TextDescription_OnTextInput, RoutingStrategies.Tunnel);
+        Configuration = Configuration.Load() ?? new Configuration();
+        TextBoxOutputDirectory.Text = Configuration.OutputDirectory;
+        CheckBoxOverwriteChd.IsChecked = Configuration.OverwriteExistingChds;
+        CheckBoxOverwriteReadme.IsChecked = Configuration.OverwriteExistingReadmes;
+        CheckBoxGetTitleFromCue.IsChecked = Configuration.GetTitleFromCue;
+        Closing += (_, _) =>
+        {
+            Configuration.OutputDirectory = TextBoxOutputDirectory.Text;
+            Configuration.OverwriteExistingChds = CheckBoxOverwriteChd.IsChecked.Value;
+            Configuration.OverwriteExistingReadmes = CheckBoxOverwriteReadme.IsChecked.Value;
+            Configuration.GetTitleFromCue = CheckBoxGetTitleFromCue.IsChecked.Value;
+            Configuration.Save();
+        };
     }
 
     private async void AddButton_OnClick(object? sender, RoutedEventArgs e)
