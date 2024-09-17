@@ -1,0 +1,6 @@
+[submodule "Avalonia.Labs"]
+	path = Avalonia.Labs
+	url = https://github.com/AvaloniaUI/Avalonia.Labs.git
+[submodule "DiscTools"]
+	path = DiscTools
+	url = https://github.com/SubZeroPL/DiscTools.git
