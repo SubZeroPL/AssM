@@ -29,12 +29,14 @@ public partial class MainWindow : Window
         CheckBoxOverwriteChd.IsChecked = Configuration.OverwriteExistingChds;
         CheckBoxOverwriteReadme.IsChecked = Configuration.OverwriteExistingReadmes;
         CheckBoxGetTitleFromCue.IsChecked = Configuration.GetTitleFromCue;
+        CheckBoxGameIdAsChdName.IsChecked = Configuration.GameIdAsChdName;
         Closing += (_, _) =>
         {
             Configuration.OutputDirectory = TextBoxOutputDirectory.Text;
             Configuration.OverwriteExistingChds = CheckBoxOverwriteChd.IsChecked.Value;
             Configuration.OverwriteExistingReadmes = CheckBoxOverwriteReadme.IsChecked.Value;
             Configuration.GetTitleFromCue = CheckBoxGetTitleFromCue.IsChecked.Value;
+            Configuration.GameIdAsChdName = CheckBoxGameIdAsChdName.IsChecked.Value;
             Configuration.Save();
         };
     }
@@ -53,8 +55,10 @@ public partial class MainWindow : Window
             var game = Functions.AddGameToList(file.Path.LocalPath, CheckBoxGetTitleFromCue.IsChecked ?? false,
                 GameList);
             if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) continue;
-            Functions.LoadExistingData(TextBoxOutputDirectory.Text, game);
+            Functions.LoadExistingData(game, Configuration);
         }
+
+        DataGridGameList.CollectionView.Refresh();
     }
 
     private void ClearButton_OnClick(object? sender, RoutedEventArgs e)
@@ -66,6 +70,7 @@ public partial class MainWindow : Window
         LabelFileVersion.Content = string.Empty;
         LabelDataSha1.Content = string.Empty;
         LabelChdManVersion.Content = string.Empty;
+        TextBoxTrackInfo.Clear();
     }
 
     private async void AddFolderButton_OnClick(object? sender, RoutedEventArgs e)
@@ -79,7 +84,7 @@ public partial class MainWindow : Window
             .ToList();
         var progress = new AddFolderProgressWindow();
         _ = progress.ShowDialog(this);
-        await progress.Process(dirs, CheckBoxGetTitleFromCue.IsChecked ?? false, GameList, TextBoxOutputDirectory.Text);
+        await progress.Process(dirs, GameList, Configuration);
         progress.Close();
         DataGridGameList.CollectionView.Refresh();
     }
@@ -93,7 +98,7 @@ public partial class MainWindow : Window
     private void DataGridGameList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (DataGridGameList?.SelectedItem is not Game game) return;
-        Functions.LoadExistingData(TextBoxOutputDirectory.Text, game);
+        Functions.LoadExistingData(game, Configuration);
         DataGridGameList.CollectionView.Refresh();
 
         TextTitle.Text = game.Title;
@@ -105,6 +110,8 @@ public partial class MainWindow : Window
         TextBoxTrackInfo.Text = game.ChdData.GetTrackInfo();
 
         MenuItemShowReadme.IsEnabled = game.ReadmeCreated;
+        MenuItemOpenFolder.IsEnabled =
+            Directory.Exists(Path.Combine(TextBoxOutputDirectory.Text ?? string.Empty, Functions.OutputPath(game)));
     }
 
     private void TextDescription_OnTextInput(object? sender, TextInputEventArgs e)
@@ -145,8 +152,7 @@ public partial class MainWindow : Window
         _ = progress.ShowDialog(this);
         try
         {
-            await progress.Process(GameList.ToList(), TextBoxOutputDirectory.Text,
-                CheckBoxOverwriteChd.IsChecked ?? false, CheckBoxOverwriteReadme.IsChecked ?? false);
+            await progress.Process(GameList.ToList(), Configuration);
             await MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished").ShowAsync();
         }
         catch (Exception ex)
@@ -173,7 +179,7 @@ public partial class MainWindow : Window
         TextBoxOutputDirectory.Text = dir.Path.LocalPath;
         foreach (var game in GameList)
         {
-            Functions.LoadExistingData(TextBoxOutputDirectory.Text, game);
+            Functions.LoadExistingData(game, Configuration);
         }
 
         DataGridGameList.CollectionView.Refresh();
@@ -189,7 +195,7 @@ public partial class MainWindow : Window
         if (!File.Exists(readmePath)) return;
         await new ReadmePreviewWindow(readmePath, game.Title).ShowDialog(this);
     }
-    
+
     private void DataGridGameList_OnAutoGeneratingColumn(object? sender, DataGridAutoGeneratingColumnEventArgs e)
     {
         switch (e.PropertyName)

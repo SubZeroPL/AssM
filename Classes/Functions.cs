@@ -14,6 +14,10 @@ public static class Functions
 {
     public static string OutputPath(Game game) => $@"{game.Platform}\{game.Id}";
 
+    public static string GetChdName(Game game, Configuration configuration) => configuration.GameIdAsChdName
+        ? $"{game.Id.ToUpper()}.chd"
+        : Path.GetFileName(Path.ChangeExtension(game.CuePath, "chd"));
+
     public static void LoadChdManInfo(string chdPath, Game game)
     {
         var chdmanInfo = new Process
@@ -64,14 +68,14 @@ public static class Functions
         game.ChdCreated = true;
     }
 
-    public static void LoadExistingData(string? outDir, Game game)
+    public static void LoadExistingData(Game game, Configuration configuration)
     {
-        if (string.IsNullOrWhiteSpace(outDir)) return;
+        if (string.IsNullOrWhiteSpace(configuration.OutputDirectory)) return;
 
-        var path = Path.Combine(outDir, OutputPath(game));
-        var chdFile = Path.ChangeExtension(Path.GetFileName(game.CuePath), "chd");
+        var path = Path.Combine(configuration.OutputDirectory, OutputPath(game));
+        var chdFile = GetChdName(game, configuration);
         var chdPath = Path.Combine(path, chdFile);
-        var readmePath = Path.Combine(outDir, OutputPath(game), Constants.ReadmeFile);
+        var readmePath = Path.Combine(configuration.OutputDirectory, OutputPath(game), Constants.ReadmeFile);
         if (File.Exists(chdPath)) LoadChdManInfo(chdPath, game);
         else game.ChdCreated = false;
         if (!File.Exists(readmePath)) game.ReadmeCreated = false;

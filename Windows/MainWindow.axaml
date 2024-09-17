@@ -21,6 +21,7 @@
                             <CheckBox Name="CheckBoxOverwriteChd" IsThreeState="False">Overwrite existing CHDs</CheckBox>
                             <CheckBox Name="CheckBoxOverwriteReadme" IsThreeState="False">Overwrite existing READMEs</CheckBox>
                             <CheckBox Name="CheckBoxGetTitleFromCue" IsThreeState="False">Get game title from CUE file name</CheckBox>
+                            <CheckBox Name="CheckBoxGameIdAsChdName" IsThreeState="False">Use Game ID as name for CHD file</CheckBox>
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>

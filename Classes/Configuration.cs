@@ -9,6 +9,7 @@ public class Configuration
     public bool OverwriteExistingChds { get; set; }
     public bool OverwriteExistingReadmes { get; set; }
     public bool GetTitleFromCue { get; set; }
+    public bool GameIdAsChdName { get; set; }
 
     private const string FileName = "Settings.json"; 
     private static readonly JsonSerializerOptions Options = new()
