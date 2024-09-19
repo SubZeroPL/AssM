@@ -26,19 +26,21 @@ public partial class MainWindow : Window
         TextDescription.AddHandler(TextInputEvent, TextDescription_OnTextInput, RoutingStrategies.Tunnel);
         Configuration = Configuration.Load() ?? new Configuration();
         TextBoxOutputDirectory.Text = Configuration.OutputDirectory;
-        CheckBoxOverwriteChd.IsChecked = Configuration.OverwriteExistingChds;
+        RadioButtonDontGenerate.IsChecked = Configuration.ChdProcessing == ChdProcessing.DontGenerate;
+        RadioButtonGenerateMissing.IsChecked = Configuration.ChdProcessing == ChdProcessing.GenerateMissing;
+        RadioButtonGenerateAll.IsChecked = Configuration.ChdProcessing == ChdProcessing.GenerateAll;
         CheckBoxOverwriteReadme.IsChecked = Configuration.OverwriteExistingReadmes;
         CheckBoxGetTitleFromCue.IsChecked = Configuration.GetTitleFromCue;
         CheckBoxGameIdAsChdName.IsChecked = Configuration.GameIdAsChdName;
         Closing += (_, _) =>
         {
             Configuration.OutputDirectory = TextBoxOutputDirectory.Text;
-            Configuration.OverwriteExistingChds = CheckBoxOverwriteChd.IsChecked.Value;
             Configuration.OverwriteExistingReadmes = CheckBoxOverwriteReadme.IsChecked.Value;
             Configuration.GetTitleFromCue = CheckBoxGetTitleFromCue.IsChecked.Value;
             Configuration.GameIdAsChdName = CheckBoxGameIdAsChdName.IsChecked.Value;
             Configuration.Save();
         };
+        if (!string.IsNullOrWhiteSpace(Configuration.OutputDirectory)) AddReadmes(Configuration.OutputDirectory);
     }
 
     private async void AddButton_OnClick(object? sender, RoutedEventArgs e)
@@ -52,8 +54,7 @@ public partial class MainWindow : Window
         var files = await GetTopLevel(this)?.StorageProvider.OpenFilePickerAsync(fpo)!;
         foreach (var file in files)
         {
-            var game = Functions.AddGameToList(file.Path.LocalPath, CheckBoxGetTitleFromCue.IsChecked ?? false,
-                GameList);
+            var game = Functions.AddGameToList(file.Path.LocalPath, Configuration, GameList);
             if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) continue;
             Functions.LoadExistingData(game, Configuration);
         }
@@ -91,8 +92,8 @@ public partial class MainWindow : Window
 
     private void DeleteButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (DataGridGameList.SelectedIndex < 0) return;
-        GameList.RemoveAt(DataGridGameList.SelectedIndex);
+        if (DataGridGameList.SelectedItem is not Game game) return;
+        GameList.Remove(game);
     }
 
     private void DataGridGameList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -110,8 +111,11 @@ public partial class MainWindow : Window
         TextBoxTrackInfo.Text = game.ChdData.GetTrackInfo();
 
         MenuItemShowReadme.IsEnabled = game.ReadmeCreated;
-        MenuItemOpenFolder.IsEnabled =
-            Directory.Exists(Path.Combine(TextBoxOutputDirectory.Text ?? string.Empty, Functions.OutputPath(game)));
+        MenuItemOpenFolder.IsEnabled = !string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text) &&
+                                       Directory.Exists(Path.Combine(TextBoxOutputDirectory.Text,
+                                           Functions.OutputPath(game)));
+
+        DataGridGameList.CollectionView.Refresh();
     }
 
     private void TextDescription_OnTextInput(object? sender, TextInputEventArgs e)
@@ -166,6 +170,22 @@ public partial class MainWindow : Window
         DataGridGameList.CollectionView.Refresh();
     }
 
+    private void AddReadmes(string directory)
+    {
+        if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) return;
+        if (!Directory.Exists(TextBoxOutputDirectory.Text)) return;
+
+        var readmeList = Functions.GetReadmeFilesInDirectory(directory);
+        foreach (var readme in readmeList)
+        {
+            var game = new Game();
+            Functions.LoadExistingData(game, Configuration, readme);
+            if (!GameList.Any(g => g.Id.Equals(game.Id))) GameList.Add(game);
+        }
+
+        DataGridGameList.CollectionView.Refresh();
+    }
+
     private async void SelectOutputFolderButton_OnClick(object? sender, RoutedEventArgs e)
     {
         var fpo = new FolderPickerOpenOptions
@@ -177,20 +197,39 @@ public partial class MainWindow : Window
         if (!dirs.Any()) return;
         var dir = dirs[0];
         TextBoxOutputDirectory.Text = dir.Path.LocalPath;
+        Configuration.OutputDirectory = TextBoxOutputDirectory.Text;
+        
+        AddReadmes(TextBoxOutputDirectory.Text);
+        DataGridGameList.CollectionView.Refresh();
+        
         foreach (var game in GameList)
         {
             Functions.LoadExistingData(game, Configuration);
         }
+        DataGridGameList.CollectionView.Refresh();
+    }
+
+    private void TextBoxOutputDirectory_OnTextInput(object? sender, TextInputEventArgs e)
+    {
+        var dir = e.Text;
+        if (!Directory.Exists(dir)) return;
+        Configuration.OutputDirectory = dir;
+        foreach (var game in GameList)
+        {
+            Functions.LoadExistingData(game, Configuration);
+        }
+        DataGridGameList.CollectionView.Refresh();
+        
+        AddReadmes(dir);
 
         DataGridGameList.CollectionView.Refresh();
     }
 
-    private async void ShowReadmeMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    private async void MenuItemShowReadme_OnClick(object? sender, RoutedEventArgs e)
     {
         if (DataGridGameList.SelectedIndex < 0) return;
         if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) return;
-        var selected = DataGridGameList.SelectedIndex;
-        var game = GameList[selected];
+        if (DataGridGameList?.SelectedItem is not Game game) return;
         var readmePath = Path.Combine(TextBoxOutputDirectory.Text, Functions.OutputPath(game), Constants.ReadmeFile);
         if (!File.Exists(readmePath)) return;
         await new ReadmePreviewWindow(readmePath, game.Title).ShowDialog(this);
@@ -219,10 +258,23 @@ public partial class MainWindow : Window
     {
         if (DataGridGameList.SelectedIndex < 0) return;
         if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) return;
-        var selected = DataGridGameList.SelectedIndex;
-        var game = GameList[selected];
+        if (DataGridGameList?.SelectedItem is not Game game) return;
         var outputPath = Path.Combine(TextBoxOutputDirectory.Text, Functions.OutputPath(game));
         var launcher = GetTopLevel(this)?.Launcher;
         launcher?.LaunchDirectoryInfoAsync(new DirectoryInfo(outputPath));
+    }
+
+    private void CheckBox_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is RadioButton { Tag: not null } radio)
+        {
+            if (Enum.TryParse<ChdProcessing>(radio.Tag as string, out var processing))
+                Configuration.ChdProcessing = processing;
+        }
+        Configuration.OutputDirectory = TextBoxOutputDirectory.Text ?? string.Empty;
+        Configuration.OverwriteExistingReadmes = CheckBoxOverwriteReadme.IsChecked ?? false;
+        Configuration.GetTitleFromCue = CheckBoxGetTitleFromCue.IsChecked ?? false;
+        Configuration.GameIdAsChdName = CheckBoxGameIdAsChdName.IsChecked ?? false;
+        Configuration.Save();
     }
 }

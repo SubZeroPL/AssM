@@ -20,6 +20,7 @@ public static class Functions
 
     public static void LoadChdManInfo(string chdPath, Game game)
     {
+        if (!File.Exists(chdPath)) return;
         var chdmanInfo = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -39,6 +40,17 @@ public static class Functions
         while (!chdmanInfo.StandardOutput.EndOfStream)
         {
             output.Add(chdmanInfo.StandardOutput.ReadLine() ?? string.Empty);
+        }
+        
+        List<string> error = [];
+        while (!chdmanInfo.StandardError.EndOfStream)
+        {
+            error.Add(chdmanInfo.StandardError.ReadLine() ?? string.Empty);
+        }
+
+        if (error.Count != 0)
+        {
+            throw new ProcessingException(string.Join(Environment.NewLine, error));
         }
 
         /*
@@ -68,16 +80,11 @@ public static class Functions
         game.ChdCreated = true;
     }
 
-    public static void LoadExistingData(Game game, Configuration configuration)
+    public static void LoadExistingData(Game game, Configuration configuration, string? readmePath = null)
     {
         if (string.IsNullOrWhiteSpace(configuration.OutputDirectory)) return;
 
-        var path = Path.Combine(configuration.OutputDirectory, OutputPath(game));
-        var chdFile = GetChdName(game, configuration);
-        var chdPath = Path.Combine(path, chdFile);
-        var readmePath = Path.Combine(configuration.OutputDirectory, OutputPath(game), Constants.ReadmeFile);
-        if (File.Exists(chdPath)) LoadChdManInfo(chdPath, game);
-        else game.ChdCreated = false;
+        readmePath ??= Path.Combine(configuration.OutputDirectory, OutputPath(game), Constants.ReadmeFile);
         if (!File.Exists(readmePath)) game.ReadmeCreated = false;
 
         if (string.IsNullOrWhiteSpace(game.Description))
@@ -88,6 +95,27 @@ public static class Functions
         LoadTitleFromReadme(readmePath, game);
 
         LoadTrackInfoFromReadme(readmePath, game);
+
+        if (string.IsNullOrWhiteSpace(game.Id))
+        {
+            LoadGameIdFromReadme(readmePath, game);
+        }
+
+        if (game.Platform == DetectedDiscType.UnknownFormat)
+        {
+            var segments = readmePath.Split(Path.DirectorySeparatorChar).Reverse().ToArray();
+            var platform = segments.Length >= 3 ? segments[2] : string.Empty;
+            if (Enum.TryParse<DetectedDiscType>(platform, out var detectedDiscType))
+            {
+                game.Platform = detectedDiscType;
+            }   
+        }
+        
+        var path = Path.Combine(configuration.OutputDirectory, OutputPath(game));
+        var chdFile = GetChdName(game, configuration);
+        var chdPath = Path.Combine(path, chdFile);
+        if (File.Exists(chdPath)) LoadChdManInfo(chdPath, game);
+        else game.ChdCreated = false;
     }
 
     private static void LoadTitleFromReadme(string readmePath, Game game)
@@ -108,6 +136,16 @@ public static class Functions
         var index = Array.FindIndex(lines, line => line.Contains("**Description:**"));
         var description = string.Join("", lines.Skip(index + 1)).Trim();
         game.Description = description;
+    }
+
+    private static void LoadGameIdFromReadme(string readmePath, Game game)
+    {
+        if (!File.Exists(readmePath)) return;
+        var lines = File.ReadAllLines(readmePath);
+        var index = Array.FindIndex(lines, line => line.Contains("**Game ID:**"));
+        var id = string.Join("", lines.Skip(index + 1).Take(3)).Trim();
+        if (!string.IsNullOrEmpty(id)) game.Id = id;
+        game.ReadmeCreated = true;
     }
 
     private static void LoadTrackInfoFromReadme(string readmePath, Game game)
@@ -133,16 +171,36 @@ public static class Functions
         return result;
     }
 
-    public static Game AddGameToList(string cuePath, bool getTitleFromCue, ObservableCollection<Game> gameList)
+    public static List<string> GetReadmeFilesInDirectory(string directory)
+    {
+        var result = Directory.GetFiles(directory).Where(file => Path.GetFileName(file) == Constants.ReadmeFile)
+            .ToList();
+        Directory.GetDirectories(directory).ToList().ForEach(d => result.AddRange(GetReadmeFilesInDirectory(d)));
+        return result;
+    }
+
+    public static Game AddGameToList(string cuePath, Configuration configuration, ObservableCollection<Game> gameList)
     {
         var di = DiscInspector.ScanDisc(cuePath);
-        var title = getTitleFromCue ? Path.GetFileNameWithoutExtension(cuePath) : di.Data.GameTitle;
+        var title = configuration.GetTitleFromCue ? Path.GetFileNameWithoutExtension(cuePath) : di.Data.GameTitle;
         var game = new Game
         {
             Title = title, Id = di.Data.SerialNumber, Platform = di.DetectedDiscType,
             CuePath = cuePath
         };
-        Dispatcher.UIThread.Invoke(() => { gameList.Add(game); });
+        var existingGame = gameList.FirstOrDefault(g => g.Id == game.Id);
+        if (existingGame != null)
+        {
+            existingGame.Title = game.Title;
+            existingGame.Platform = game.Platform;
+            existingGame.CuePath = game.CuePath;
+            existingGame.Id = game.Id;
+        }
+        else
+        {
+            Dispatcher.UIThread.Invoke(() => { gameList.Add(game); });
+        }
+
         return game;
     }
 }

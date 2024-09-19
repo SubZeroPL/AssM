@@ -55,9 +55,10 @@ public partial class ProgressWindow : Window
     private async Task ConvertSingleChd(Game game, Action<double> reportProgress)
     {
         if (_cancelled) return;
+        if (_configuration.ChdProcessing == ChdProcessing.DontGenerate) return;
         var chdFile = Functions.GetChdName(game, _configuration);
         var chdPath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), chdFile);
-        if (File.Exists(chdPath) && !_configuration.OverwriteExistingChds) return;
+        if (File.Exists(chdPath) && _configuration.ChdProcessing != ChdProcessing.GenerateAll) return;
         Directory.CreateDirectory(Path.GetDirectoryName(chdPath) ?? string.Empty);
 
         var chdmanConvert = new Process
@@ -136,6 +137,7 @@ public partial class ProgressWindow : Window
         var readmePath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), Constants.ReadmeFile);
         if (File.Exists(readmePath) && !_configuration.OverwriteExistingReadmes) return;
         var cuefile = game.CuePath;
+        if (string.IsNullOrWhiteSpace(cuefile)) return;
         var lines = File.ReadLines(cuefile);
         List<string> bins = [];
         bins.AddRange(from line in lines
