@@ -8,9 +8,9 @@ namespace AssM.Data;
 public class Game
 {
     public string Title { get; set; } = string.Empty;
-    public string Id { get; init; } = string.Empty;
-    public string CuePath { get; init; } = string.Empty;
-    public DetectedDiscType Platform { get; init; }
+    public string Id { get; set; } = string.Empty;
+    public string CuePath { get; set; } = string.Empty;
+    public DetectedDiscType Platform { get; set; } = DetectedDiscType.UnknownFormat;
     public bool ReadmeCreated { get; set; }
     public bool ChdCreated { get; set; }
     public string Description { get; set; } = string.Empty;

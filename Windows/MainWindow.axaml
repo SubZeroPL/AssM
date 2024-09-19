@@ -18,10 +18,14 @@
                     </Panel>
                     <Button.Flyout>
                         <MenuFlyout>
-                            <CheckBox Name="CheckBoxOverwriteChd" IsThreeState="False">Overwrite existing CHDs</CheckBox>
-                            <CheckBox Name="CheckBoxOverwriteReadme" IsThreeState="False">Overwrite existing READMEs</CheckBox>
-                            <CheckBox Name="CheckBoxGetTitleFromCue" IsThreeState="False">Get game title from CUE file name</CheckBox>
-                            <CheckBox Name="CheckBoxGameIdAsChdName" IsThreeState="False">Use Game ID as name for CHD file</CheckBox>
+                            <MenuItem Header="CHD operations">
+                                <RadioButton GroupName="Chd" Name="RadioButtonDontGenerate" Tag="DontGenerate" Click="CheckBox_OnClick">Don't generate CHDs</RadioButton>
+                                <RadioButton GroupName="Chd" Name="RadioButtonGenerateMissing" Tag="GenerateMissing" Click="CheckBox_OnClick">Generate only missing</RadioButton>
+                                <RadioButton GroupName="Chd" Name="RadioButtonGenerateAll" Tag="GenerateAll" Click="CheckBox_OnClick">Generate all (overwrite existing)</RadioButton>
+                            </MenuItem>
+                            <CheckBox Name="CheckBoxOverwriteReadme" IsThreeState="False" Click="CheckBox_OnClick">Overwrite existing READMEs</CheckBox>
+                            <CheckBox Name="CheckBoxGetTitleFromCue" IsThreeState="False" Click="CheckBox_OnClick">Get game title from CUE file name</CheckBox>
+                            <CheckBox Name="CheckBoxGameIdAsChdName" IsThreeState="False" Click="CheckBox_OnClick">Use Game ID as name for CHD file</CheckBox>
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
@@ -31,7 +35,7 @@
             <Label Target="TextBoxOutputDirectory">Output directory:</Label>
             <DockPanel>
                 <Button DockPanel.Dock="Right" Click="SelectOutputFolderButton_OnClick">Select</Button>
-                <TextBox Name="TextBoxOutputDirectory" Margin="0 0 5 0"></TextBox>
+                <TextBox Name="TextBoxOutputDirectory" TextInput="TextBoxOutputDirectory_OnTextInput" Margin="0 0 5 0"></TextBox>
             </DockPanel>
         </StackPanel>
         <TabControl DockPanel.Dock="Bottom" SelectionChanged="DataGridGameList_OnSelectionChanged">
@@ -86,7 +90,7 @@
                       SelectionChanged="DataGridGameList_OnSelectionChanged">
                 <DataGrid.ContextFlyout>
                     <MenuFlyout>
-                        <MenuItem Name="MenuItemShowReadme" Header="Show README" Click="ShowReadmeMenuItem_OnClick"/>
+                        <MenuItem Name="MenuItemShowReadme" Header="Show README" Click="MenuItemShowReadme_OnClick"/>
                         <MenuItem Name="MenuItemOpenFolder" Header="Open output folder" Click="MenuItemOpenFolder_OnClick"/>
                     </MenuFlyout>
                 </DataGrid.ContextFlyout>

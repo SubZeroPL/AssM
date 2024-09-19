@@ -30,7 +30,7 @@ public partial class AddFolderProgressWindow : Window
         foreach (var cueFile in cueFiles)
         {
             if (_cancelled) return;
-            await Task.Run(() => Functions.AddGameToList(cueFile, configuration.GetTitleFromCue, gameList));
+            await Task.Run(() => Functions.AddGameToList(cueFile, configuration, gameList));
         }
 
         if (string.IsNullOrWhiteSpace(configuration.OutputDirectory)) return;
