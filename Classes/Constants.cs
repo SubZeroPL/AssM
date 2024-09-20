@@ -32,6 +32,9 @@ public static partial class Constants
     public const string ReadmeChdHash = "#chdHash#";
     public const string ReadmeBinHashes = "#binHashes#";
     public const string ReadmeGameDescription = "#description#";
+    
+    public const string GithubLink = "https://github.com/SubZeroPL/AssM";
+    public const string DiscordLink = "https://discord.com/invite/USu77Cktqd";
 
     public static readonly string[] Steps =
     [
