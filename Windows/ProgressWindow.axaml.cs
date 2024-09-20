@@ -178,6 +178,8 @@ public partial class ProgressWindow : Window
         if (_cancelled) return;
         var readmePath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), Constants.ReadmeFile);
         if (File.Exists(readmePath) && !_configuration.OverwriteExistingReadmes) return;
+        var dir = Path.GetDirectoryName(readmePath);
+        if (!string.IsNullOrWhiteSpace(dir)) Directory.CreateDirectory(dir);
         var template = File.ReadAllText(Constants.ReadmeTemplate);
         template = template.Replace(Constants.ReadmeGameTitle, game.Title);
         template = template.Replace(Constants.ReadmeGameId, game.Id);
