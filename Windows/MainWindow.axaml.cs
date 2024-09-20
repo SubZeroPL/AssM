@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using AssM.Classes;
 using AssM.Data;
 using Avalonia.Controls;
@@ -21,6 +22,11 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        var ver = Assembly.GetEntryAssembly()?.GetName().Version;
+        if (ver != null)
+        {
+            Title = $"AssM {ver.Major}.{ver.Minor}.{ver.Build}";
+        }
         DataGridGameList.ItemsSource = GameList;
         TextTitle.AddHandler(TextInputEvent, TextTitle_OnTextInput, RoutingStrategies.Tunnel);
         TextDescription.AddHandler(TextInputEvent, TextDescription_OnTextInput, RoutingStrategies.Tunnel);
