@@ -283,4 +283,16 @@ public partial class MainWindow : Window
         Configuration.GameIdAsChdName = CheckBoxGameIdAsChdName.IsChecked ?? false;
         Configuration.Save();
     }
+
+    private void ButtonDiscord_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var launcher = GetTopLevel(this)?.Launcher;
+        launcher?.LaunchUriAsync(new Uri(Constants.DiscordLink));
+    }
+
+    private void ButtonHelp_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var launcher = GetTopLevel(this)?.Launcher;
+        launcher?.LaunchUriAsync(new Uri(Constants.GithubLink));
+    }
 }
