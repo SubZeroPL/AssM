@@ -5,11 +5,11 @@
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Version>1.2.1</Version>
+        <Version>1.3.0</Version>
         <Authors>SubZeroPL</Authors>
         <PackageProjectUrl>https://github.com/SubZeroPL/AssM/</PackageProjectUrl>
-        <AssemblyVersion>1.2.1</AssemblyVersion>
-        <FileVersion>1.2.1</FileVersion>
+        <AssemblyVersion>1.3.0</AssemblyVersion>
+        <FileVersion>1.3.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -32,6 +32,7 @@
     <ItemGroup>
         <Content CopyToOutputDirectory="Always" Include="Tools\*"/>
         <Content CopyToOutputDirectory="Always" Include="Templates\README-template.md"/>
+        <Content CopyToOutputDirectory="Always" Include="README.md"/>
     </ItemGroup>
 
     <ItemGroup>
