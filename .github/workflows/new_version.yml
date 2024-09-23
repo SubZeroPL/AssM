@@ -36,19 +36,62 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Build version
-        run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false
       - name: Get version
         id: get_version
         run: echo "version=$((Select-Xml -Path .\$( $env:PROJECT_NAME ).csproj -XPath '/Project/PropertyGroup/AssemblyVersion').Node.InnerXML)" >> $env:GITHUB_OUTPUT
         shell: pwsh
-      - name: Create artifact
+      - name: Build version (win64, no dotnet)
+        run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false
+      - name: Create artifact (win64, no dotnet)
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
-          filename: AssM_${{ steps.get_version.outputs.version }}.zip
+          filename: AssM_${{ steps.get_version.outputs.version }}-win-x64.zip
           directory: bin/Release/net8.0/win-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
+      - name: Move artifact
+        run: mv bin/Release/net8.0/win-x64/publish/AssM_${{ steps.get_version.outputs.version }}-win-x64.zip ./
+      - name: Clean
+        run: dotnet clean
+      - name: Build version (win64, with dotnet)
+        run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained true
+      - name: Create artifact (win64, with dotnet)
+        uses: thedoctor0/zip-release@0.7.5
+        with:
+          type: 'zip'
+          filename: AssM_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip
+          directory: bin/Release/net8.0/win-x64/publish/
+          exclusions: '*.pdb Avalonia.Labs.Gif.xml'
+      - name: Move artifact
+        run: mv bin/Release/net8.0/win-x64/publish/AssM_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip ./
+      - name: Clean
+        run: dotnet clean
+      - name: Build version (linux64, no dotnet)
+        run: dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained false
+      - name: Create artifact (linux64, no dotnet)
+        uses: thedoctor0/zip-release@0.7.5
+        with:
+          type: 'zip'
+          filename: AssM_${{ steps.get_version.outputs.version }}-linux-x64.zip
+          directory: bin/Release/net8.0/linux-x64/publish/
+          exclusions: '*.pdb Avalonia.Labs.Gif.xml'
+      - name: Move artifact
+        run: mv bin/Release/net8.0/linux-x64/publish/AssM_${{ steps.get_version.outputs.version }}-linux-x64.zip ./
+      - name: Clean
+        run: dotnet clean
+      - name: Build version (linux64, with dotnet)
+        run: dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained true
+      - name: Create artifact (linux64, with dotnet)
+        uses: thedoctor0/zip-release@0.7.5
+        with:
+          type: 'zip'
+          filename: AssM_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
+          directory: bin/Release/net8.0/linux-x64/publish/
+          exclusions: '*.pdb Avalonia.Labs.Gif.xml'
+      - name: Move artifact
+        run: mv bin/Release/net8.0/linux-x64/publish/AssM_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip ./
+      - name: Clean
+        run: dotnet clean
       - name: Create tag
         run: |
           git tag v${{ steps.get_version.outputs.version }}
@@ -76,7 +119,7 @@ jobs:
         uses: ncipollo/release-action@v1
         if: ${{ !inputs.draft_release && !inputs.no_publish }}
         with:
-          artifacts: bin/Release/net8.0/win-x64/publish/AssM_${{ steps.get_version.outputs.version }}.zip
+          artifacts: AssM_${{ steps.get_version.outputs.version }}-win-x64.zip,AssM_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip,AssM_${{ steps.get_version.outputs.version }}-linux-x64.zip,AssM_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
           name: AssM Release v${{ steps.get_version.outputs.version }}
           tag: v${{ steps.get_version.outputs.version }}
           commit: master
