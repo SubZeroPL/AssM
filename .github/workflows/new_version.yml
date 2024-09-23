@@ -106,8 +106,8 @@ jobs:
         uses: ncipollo/release-action@v1
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.draft_release && !inputs.no_publish }}
         with:
-          artifacts: bin/Release/net8.0/win-x64/publish/AssM_${{ steps.get_version.outputs.version }}.zip
-          name: AssM Release v${{ steps.get_version.outputs.version }}
+          artifacts: AssM_${{ steps.get_version.outputs.version }}-win-x64.zip,AssM_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip,AssM_${{ steps.get_version.outputs.version }}-linux-x64.zip,AssM_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
+          name: AssM Release v${{ steps.get_version.outputs.version }}-pre
           tag: v${{ steps.get_version.outputs.version }}_pre
           commit: master
           prerelease: true
