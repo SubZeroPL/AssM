@@ -2,13 +2,19 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
+using System.Text.Json;
 using AssM.Classes;
 using AssM.Data;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 
@@ -22,11 +28,12 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        var ver = Assembly.GetEntryAssembly()?.GetName().Version;
+        var ver = GetVersion();
         if (ver != null)
         {
             Title = $"AssM {ver.Major}.{ver.Minor}.{ver.Build}";
         }
+
         DataGridGameList.ItemsSource = GameList;
         TextTitle.AddHandler(TextInputEvent, TextTitle_OnTextInput, RoutingStrategies.Tunnel);
         TextDescription.AddHandler(TextInputEvent, TextDescription_OnTextInput, RoutingStrategies.Tunnel);
@@ -49,6 +56,41 @@ public partial class MainWindow : Window
             Configuration.Save();
         };
         if (!string.IsNullOrWhiteSpace(Configuration.OutputDirectory)) AddReadmes(Configuration.OutputDirectory);
+        CheckForNewVersion();
+    }
+
+    private static Version? GetVersion()
+    {
+        return Assembly.GetEntryAssembly()?.GetName().Version;
+    }
+
+    private async void CheckForNewVersion()
+    {
+        var currentVer = GetVersion();
+        var client = new HttpClient();
+        var request = new HttpRequestMessage
+        {
+            RequestUri = new Uri("https://api.github.com/repos/SubZeroPL/AssM/releases"),
+            Method = HttpMethod.Get,
+            Headers =
+            {
+                Accept = { new MediaTypeWithQualityHeaderValue("application/vnd.github+json") }
+            }
+        };
+        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue(Assembly.GetExecutingAssembly().GetName().Name!,
+            Assembly.GetExecutingAssembly().GetName().Version!.ToString()));
+        var response = await client.SendAsync(request);
+        if (response.StatusCode != HttpStatusCode.OK) return;
+        var json = await response.Content.ReadAsStringAsync();
+        var jsonDoc = JsonDocument.Parse(json);
+        if (!jsonDoc.RootElement[0].TryGetProperty("tag_name", out var tagName)) return;
+        var tag = tagName.GetString()?.Replace("v", string.Empty);
+        var versionPresent = Version.TryParse(tag, out var version);
+        if (!versionPresent || version <= currentVer) return;
+        TextBlockUpdate.Text = $"New version: {version!.Major}.{version.Minor}.{version.Build}";
+        ButtonUpdate.IsVisible = true;
+        ButtonUpdate.Tag = jsonDoc.RootElement[0].GetProperty("html_url").GetString();
     }
 
     private async void AddButton_OnClick(object? sender, RoutedEventArgs e)
@@ -114,23 +156,24 @@ public partial class MainWindow : Window
     private void DataGridGameList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (DataGridGameList?.SelectedItem is not Game game) return;
-        Functions.LoadExistingData(game, Configuration);
-        DataGridGameList.CollectionView.Refresh();
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Functions.LoadExistingData(game, Configuration);
+            DataGridGameList.CollectionView.Refresh();
 
-        TextTitle.Text = game.Title;
-        TextDescription.Text = game.Description;
-        LabelChdManVersion.Content = game.ChdData.ChdManVersion;
-        LabelFileVersion.Content = game.ChdData.FileVersion;
-        LabelSha1.Content = game.ChdData.Sha1Hash;
-        LabelDataSha1.Content = game.ChdData.DataSha1Hash;
-        TextBoxTrackInfo.Text = game.ChdData.GetTrackInfo();
+            TextTitle.Text = game.Title;
+            TextDescription.Text = game.Description;
+            LabelChdManVersion.Content = game.ChdData.ChdManVersion;
+            LabelFileVersion.Content = game.ChdData.FileVersion;
+            LabelSha1.Content = game.ChdData.Sha1Hash;
+            LabelDataSha1.Content = game.ChdData.DataSha1Hash;
+            TextBoxTrackInfo.Text = game.ChdData.GetTrackInfo();
 
-        MenuItemShowReadme.IsEnabled = game.ReadmeCreated;
-        MenuItemOpenFolder.IsEnabled = !string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text) &&
-                                       Directory.Exists(Path.Combine(TextBoxOutputDirectory.Text,
-                                           Functions.OutputPath(game)));
-
-        DataGridGameList.CollectionView.Refresh();
+            MenuItemShowReadme.IsEnabled = game.ReadmeCreated;
+            MenuItemOpenFolder.IsEnabled = !string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text) &&
+                                           Directory.Exists(Path.Combine(TextBoxOutputDirectory.Text,
+                                               Functions.OutputPath(game)));
+        });
     }
 
     private void TextDescription_OnTextInput(object? sender, TextInputEventArgs e)
@@ -211,14 +254,15 @@ public partial class MainWindow : Window
         var dir = dirs[0];
         TextBoxOutputDirectory.Text = dir.Path.LocalPath;
         Configuration.OutputDirectory = TextBoxOutputDirectory.Text;
-        
+
         AddReadmes(TextBoxOutputDirectory.Text);
         DataGridGameList.CollectionView.Refresh();
-        
+
         foreach (var game in GameList)
         {
             Functions.LoadExistingData(game, Configuration);
         }
+
         DataGridGameList.CollectionView.Refresh();
     }
 
@@ -284,6 +328,7 @@ public partial class MainWindow : Window
             if (Enum.TryParse<ChdProcessing>(radio.Tag as string, out var processing))
                 Configuration.ChdProcessing = processing;
         }
+
         Configuration.OutputDirectory = TextBoxOutputDirectory.Text ?? string.Empty;
         Configuration.ProcessOnlyModified = CheckBoxProcessModified.IsChecked ?? false;
         Configuration.OverwriteExistingReadmes = CheckBoxOverwriteReadme.IsChecked ?? false;
