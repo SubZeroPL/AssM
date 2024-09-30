@@ -7,6 +7,20 @@ For the application to work [.NET framework 8](https://dotnet.microsoft.com/en-u
 
 Application is developed and tested on Windows 11 OS. In theory should also work on Linux/Mac hovewer it was not tested on those platforms and the functionality will be reduced (no creation of CHD files because of only Windows version of CHDMAN is provided).
 
+## 📦 Releases
+Each release starting with 1.4.0 has four variants:
+- Windows x64 version with .NET 8 framework bundled (AssM_X.X.X_with_dotnet-win-x64.zip)
+- Windows x64 version without .NET 8 framework bundled (AssM_X.X.X-win-x64.zip)
+- Linux x64 version with .NET 8 framework bundled (AssM_X.X.X_with_dotnet-linux-x64.zip)
+- Linux x64 version without .NET 8 framework bundled (AssM_X.X.X-linux-x64.zip)
+
+_**Linux release is highly experimental, use at your own risk!**_
+
+The application has some basic new version check implemented. When it detects that new version is available, this button will be shown:\
+![New version button](.github/assets/new_ver.png "New version button")
+
+Clicking it will open default browser on the latest release page.
+
 ## 🪧 Usage
 [![Last Release](https://img.shields.io/github/v/release/SubZeroPL/AssM?logo=github&label=latest)](https://github.com/SubZeroPL/AssM/releases)
 - get latest version of the application from [Releases](https://github.com/SubZeroPL/AssM/releases) page
@@ -33,7 +47,6 @@ Other configuration options should be self-explanatory.
 
 ## 📝 TODO
 - some nice icon
-- autoupdater?
 - [you tell me](https://github.com/SubZeroPL/AssM/issues)
 
 ## 🔗 Dependencies

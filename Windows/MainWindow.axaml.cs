@@ -89,7 +89,7 @@ public partial class MainWindow : Window
         if (!versionPresent || version <= currentVer) return;
         TextBlockUpdate.Text = $"New version: {version!.Major}.{version.Minor}.{version.Build}";
         ButtonUpdate.IsVisible = true;
-        ButtonUpdate.Tag = jsonDoc.RootElement[0].GetProperty("html_url").GetString();
+        ButtonUpdate.Tag = jsonDoc.RootElement.GetProperty("html_url").GetString();
     }
 
     private async void AddButton_OnClick(object? sender, RoutedEventArgs e)
