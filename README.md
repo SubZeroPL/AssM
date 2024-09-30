@@ -5,7 +5,7 @@ It is a piece of software that assists in creating entries for [Arkadyzja savest
 ## ⚠️ Requirements
 For the application to work [.NET framework 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) is required. 
 
-Application is developed and tested on Windows 11 OS. In theory should also work on Linux/Mac hovewer it was not tested on those platforms and the functionality will be reduced (no creation of CHD files because of only Windows version of CHDMAN is provided).
+Application is developed and tested on Windows 11 OS. In theory should also work on Linux/Mac hovewer it was not tested on those platforms (only a bit on Linux and not at all on Mac) and currently only Win and Linux builds are released (see below).
 
 ## 📦 Releases
 Each release starting with 1.4.0 has four variants:
@@ -14,7 +14,7 @@ Each release starting with 1.4.0 has four variants:
 - Linux x64 version with .NET 8 framework bundled (AssM_X.X.X_with_dotnet-linux-x64.zip)
 - Linux x64 version without .NET 8 framework bundled (AssM_X.X.X-linux-x64.zip)
 
-_**Linux release is highly experimental, use at your own risk!**_
+_**Linux releases are highly experimental, use at your own risk!**_
 
 The application has some basic new version check implemented. When it detects that new version is available, this button will be shown:\
 ![New version button](.github/assets/new_ver.png "New version button")
@@ -25,7 +25,7 @@ Clicking it will open default browser on the latest release page.
 [![Last Release](https://img.shields.io/github/v/release/SubZeroPL/AssM?logo=github&label=latest)](https://github.com/SubZeroPL/AssM/releases)
 - get latest version of the application from [Releases](https://github.com/SubZeroPL/AssM/releases) page
 - unpack to some empty directory
-- run the `AssM.exe` file
+- run the `AssM.exe` file (or `AssM` for Linux)
 
 ![Application main window](.github/assets/app.png "Application main window")
 First you should select Output directory, where the created README files will be stored. The files are created in a specific directory structure:
