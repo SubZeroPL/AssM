@@ -7,6 +7,8 @@ public class Configuration
 {
     public string OutputDirectory { get; set; } = string.Empty;
     public ChdProcessing ChdProcessing { get; set; }
+    
+    public bool ProcessOnlyModified { get; set; }
     public bool OverwriteExistingReadmes { get; set; }
     public bool GetTitleFromCue { get; set; }
     public bool GameIdAsChdName { get; set; }

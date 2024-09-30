@@ -2,13 +2,19 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
+using System.Text.Json;
 using AssM.Classes;
 using AssM.Data;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 
@@ -22,11 +28,12 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        var ver = Assembly.GetEntryAssembly()?.GetName().Version;
+        var ver = GetVersion();
         if (ver != null)
         {
             Title = $"AssM {ver.Major}.{ver.Minor}.{ver.Build}";
         }
+
         DataGridGameList.ItemsSource = GameList;
         TextTitle.AddHandler(TextInputEvent, TextTitle_OnTextInput, RoutingStrategies.Tunnel);
         TextDescription.AddHandler(TextInputEvent, TextDescription_OnTextInput, RoutingStrategies.Tunnel);
@@ -38,15 +45,51 @@ public partial class MainWindow : Window
         CheckBoxOverwriteReadme.IsChecked = Configuration.OverwriteExistingReadmes;
         CheckBoxGetTitleFromCue.IsChecked = Configuration.GetTitleFromCue;
         CheckBoxGameIdAsChdName.IsChecked = Configuration.GameIdAsChdName;
+        CheckBoxProcessModified.IsChecked = Configuration.ProcessOnlyModified;
         Closing += (_, _) =>
         {
             Configuration.OutputDirectory = TextBoxOutputDirectory.Text;
             Configuration.OverwriteExistingReadmes = CheckBoxOverwriteReadme.IsChecked.Value;
             Configuration.GetTitleFromCue = CheckBoxGetTitleFromCue.IsChecked.Value;
             Configuration.GameIdAsChdName = CheckBoxGameIdAsChdName.IsChecked.Value;
+            Configuration.ProcessOnlyModified = CheckBoxProcessModified.IsChecked.Value;
             Configuration.Save();
         };
         if (!string.IsNullOrWhiteSpace(Configuration.OutputDirectory)) AddReadmes(Configuration.OutputDirectory);
+        CheckForNewVersion();
+    }
+
+    private static Version? GetVersion()
+    {
+        return Assembly.GetEntryAssembly()?.GetName().Version;
+    }
+
+    private async void CheckForNewVersion()
+    {
+        var currentVer = GetVersion();
+        var client = new HttpClient();
+        var request = new HttpRequestMessage
+        {
+            RequestUri = new Uri(Constants.LatestReleaseLink),
+            Method = HttpMethod.Get,
+            Headers =
+            {
+                Accept = { new MediaTypeWithQualityHeaderValue("application/vnd.github+json") }
+            }
+        };
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue(Assembly.GetExecutingAssembly().GetName().Name!,
+            Assembly.GetExecutingAssembly().GetName().Version!.ToString()));
+        var response = await client.SendAsync(request);
+        if (response.StatusCode != HttpStatusCode.OK) return;
+        var json = await response.Content.ReadAsStringAsync();
+        var jsonDoc = JsonDocument.Parse(json);
+        if (!jsonDoc.RootElement.TryGetProperty("tag_name", out var tagName)) return;
+        var tag = tagName.GetString()?.Replace("v", string.Empty);
+        var versionPresent = Version.TryParse(tag, out var version);
+        if (!versionPresent || version <= currentVer) return;
+        TextBlockUpdate.Text = $"New version: {version!.Major}.{version.Minor}.{version.Build}";
+        ButtonUpdate.IsVisible = true;
+        ButtonUpdate.Tag = jsonDoc.RootElement[0].GetProperty("html_url").GetString();
     }
 
     private async void AddButton_OnClick(object? sender, RoutedEventArgs e)
@@ -60,12 +103,19 @@ public partial class MainWindow : Window
         var files = await GetTopLevel(this)?.StorageProvider.OpenFilePickerAsync(fpo)!;
         foreach (var file in files)
         {
-            var game = Functions.AddGameToList(file.Path.LocalPath, Configuration, GameList);
-            if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) continue;
-            Functions.LoadExistingData(game, Configuration);
+            AddGame(file.Path.LocalPath);
         }
 
         DataGridGameList.CollectionView.Refresh();
+    }
+
+    private void AddGame(string cuePath)
+    {
+        if (string.IsNullOrWhiteSpace(cuePath)) return;
+        var game = Functions.AddGameToList(cuePath, Configuration, GameList);
+        if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) return;
+        Functions.LoadExistingData(game, Configuration);
+        game.Modified = true;
     }
 
     private void ClearButton_OnClick(object? sender, RoutedEventArgs e)
@@ -105,40 +155,39 @@ public partial class MainWindow : Window
     private void DataGridGameList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (DataGridGameList?.SelectedItem is not Game game) return;
-        Functions.LoadExistingData(game, Configuration);
-        DataGridGameList.CollectionView.Refresh();
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Functions.LoadExistingData(game, Configuration);
+            DataGridGameList.CollectionView.Refresh();
 
-        TextTitle.Text = game.Title;
-        TextDescription.Text = game.Description;
-        LabelChdManVersion.Content = game.ChdData.ChdManVersion;
-        LabelFileVersion.Content = game.ChdData.FileVersion;
-        LabelSha1.Content = game.ChdData.Sha1Hash;
-        LabelDataSha1.Content = game.ChdData.DataSha1Hash;
-        TextBoxTrackInfo.Text = game.ChdData.GetTrackInfo();
+            TextTitle.Text = game.Title;
+            TextDescription.Text = game.Description;
+            LabelChdManVersion.Content = game.ChdData.ChdManVersion;
+            LabelFileVersion.Content = game.ChdData.FileVersion;
+            LabelSha1.Content = game.ChdData.Sha1Hash;
+            LabelDataSha1.Content = game.ChdData.DataSha1Hash;
+            TextBoxTrackInfo.Text = game.ChdData.GetTrackInfo();
 
-        MenuItemShowReadme.IsEnabled = game.ReadmeCreated;
-        MenuItemOpenFolder.IsEnabled = !string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text) &&
-                                       Directory.Exists(Path.Combine(TextBoxOutputDirectory.Text,
-                                           Functions.OutputPath(game)));
-
-        DataGridGameList.CollectionView.Refresh();
+            MenuItemShowReadme.IsEnabled = game.ReadmeCreated;
+            MenuItemOpenFolder.IsEnabled = !string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text) &&
+                                           Directory.Exists(Path.Combine(TextBoxOutputDirectory.Text,
+                                               Functions.OutputPath(game)));
+        });
     }
 
     private void TextDescription_OnTextInput(object? sender, TextInputEventArgs e)
     {
-        var selected = DataGridGameList.SelectedIndex;
-        if (selected < 0) return;
-        var item = GameList[selected];
-        item.Description = TextDescription.Text + e.Text;
+        if (DataGridGameList.SelectedItem is not Game game) return;
+        game.Description = TextDescription.Text + e.Text;
+        game.Modified = true;
         DataGridGameList.CollectionView.Refresh();
     }
 
     private void TextTitle_OnTextInput(object? sender, TextInputEventArgs e)
     {
-        var selected = DataGridGameList.SelectedIndex;
-        if (selected < 0) return;
-        var item = GameList[selected];
-        item.Title = TextTitle.Text + e.Text;
+        if (DataGridGameList.SelectedItem is not Game game) return;
+        game.Title = TextTitle.Text + e.Text;
+        game.Modified = true;
         DataGridGameList.CollectionView.Refresh();
     }
 
@@ -204,14 +253,15 @@ public partial class MainWindow : Window
         var dir = dirs[0];
         TextBoxOutputDirectory.Text = dir.Path.LocalPath;
         Configuration.OutputDirectory = TextBoxOutputDirectory.Text;
-        
+
         AddReadmes(TextBoxOutputDirectory.Text);
         DataGridGameList.CollectionView.Refresh();
-        
+
         foreach (var game in GameList)
         {
             Functions.LoadExistingData(game, Configuration);
         }
+
         DataGridGameList.CollectionView.Refresh();
     }
 
@@ -224,8 +274,7 @@ public partial class MainWindow : Window
         {
             Functions.LoadExistingData(game, Configuration);
         }
-        DataGridGameList.CollectionView.Refresh();
-        
+
         AddReadmes(dir);
 
         DataGridGameList.CollectionView.Refresh();
@@ -246,6 +295,7 @@ public partial class MainWindow : Window
         switch (e.PropertyName)
         {
             case "ChdData":
+            case "Modified":
                 e.Column.IsVisible = false;
                 break;
             case "CuePath":
@@ -277,11 +327,24 @@ public partial class MainWindow : Window
             if (Enum.TryParse<ChdProcessing>(radio.Tag as string, out var processing))
                 Configuration.ChdProcessing = processing;
         }
+
         Configuration.OutputDirectory = TextBoxOutputDirectory.Text ?? string.Empty;
+        Configuration.ProcessOnlyModified = CheckBoxProcessModified.IsChecked ?? false;
         Configuration.OverwriteExistingReadmes = CheckBoxOverwriteReadme.IsChecked ?? false;
         Configuration.GetTitleFromCue = CheckBoxGetTitleFromCue.IsChecked ?? false;
         Configuration.GameIdAsChdName = CheckBoxGameIdAsChdName.IsChecked ?? false;
         Configuration.Save();
+        RefreshList();
+    }
+
+    private void RefreshList()
+    {
+        foreach (var game in GameList)
+        {
+            Functions.LoadExistingData(game, Configuration);
+        }
+
+        DataGridGameList.CollectionView.Refresh();
     }
 
     private void ButtonDiscord_OnClick(object? sender, RoutedEventArgs e)
@@ -294,5 +357,27 @@ public partial class MainWindow : Window
     {
         var launcher = GetTopLevel(this)?.Launcher;
         launcher?.LaunchUriAsync(new Uri(Constants.GithubLink));
+    }
+
+    private void DataGridGameList_OnLoadingRow(object? sender, DataGridRowEventArgs e)
+    {
+        if (e.Row.DataContext is not Game game) return;
+        e.Row.FontStyle = game.Modified ? FontStyle.Italic : FontStyle.Normal;
+        MenuItemShowReadme.IsEnabled = game.ReadmeCreated;
+        MenuItemOpenFolder.IsEnabled = !string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text) &&
+                                       Directory.Exists(Path.Combine(TextBoxOutputDirectory.Text,
+                                           Functions.OutputPath(game)));
+    }
+
+    private void MainWindow_OnActivated(object? sender, EventArgs e)
+    {
+        DataGridGameList.CollectionView.Refresh();
+    }
+
+    private void ButtonUpdate_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (ButtonUpdate.Tag is not string tag) return;
+        var launcher = GetTopLevel(this)?.Launcher;
+        launcher?.LaunchUriAsync(new Uri(tag));
     }
 }
