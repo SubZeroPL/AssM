@@ -15,6 +15,7 @@ public class Game
     public bool ChdCreated { get; set; }
     public string Description { get; set; } = string.Empty;
     public ChdData ChdData { get; } = new();
+    public bool Modified  { get; set; }
 }
 
 public class ChdData

@@ -32,6 +32,7 @@ public partial class ProgressWindow : Window
         for (var i = 0; i < gameList.Count; i++)
         {
             var game = gameList.ElementAt(i);
+            if (_configuration.ProcessOnlyModified && !game.Modified) continue;
             LabelGameTitle.Content = game.Title;
             LabelAll.Content = gameList.Count;
             LabelIndex.Content = i + 1;
@@ -44,6 +45,7 @@ public partial class ProgressWindow : Window
             GetChdManInfo(game);
             LabelStep.Content = Constants.Steps[step];
             GenerateReadme(game);
+            game.Modified = false;
         }
     }
 
@@ -51,7 +53,7 @@ public partial class ProgressWindow : Window
     {
         Dispatcher.UIThread.InvokeAsync(() => { ProgressBarProgress.Value = progress; });
     }
-    
+
     private async Task ConvertSingleChd(Game game, Action<double> reportProgress)
     {
         if (_cancelled) return;
@@ -59,6 +61,7 @@ public partial class ProgressWindow : Window
         var chdFile = Functions.GetChdName(game, _configuration);
         var chdPath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), chdFile);
         if (File.Exists(chdPath) && _configuration.ChdProcessing != ChdProcessing.GenerateAll) return;
+        if (string.IsNullOrWhiteSpace(game.CuePath)) return;
         Directory.CreateDirectory(Path.GetDirectoryName(chdPath) ?? string.Empty);
 
         var chdmanConvert = new Process

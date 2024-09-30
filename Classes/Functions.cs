@@ -41,7 +41,7 @@ public static class Functions
         {
             output.Add(chdmanInfo.StandardOutput.ReadLine() ?? string.Empty);
         }
-        
+
         List<string> error = [];
         while (!chdmanInfo.StandardError.EndOfStream)
         {
@@ -87,12 +87,15 @@ public static class Functions
         readmePath ??= Path.Combine(configuration.OutputDirectory, OutputPath(game), Constants.ReadmeFile);
         if (!File.Exists(readmePath)) game.ReadmeCreated = false;
 
-        if (string.IsNullOrWhiteSpace(game.Description))
+        if (string.IsNullOrWhiteSpace(game.Description) && !game.Modified)
         {
             LoadDescriptionFromReadme(readmePath, game);
         }
 
-        LoadTitleFromReadme(readmePath, game);
+        if (!game.Modified)
+        {
+            LoadTitleFromReadme(readmePath, game);
+        }
 
         LoadTrackInfoFromReadme(readmePath, game);
 
@@ -108,9 +111,9 @@ public static class Functions
             if (Enum.TryParse<DetectedDiscType>(platform, out var detectedDiscType))
             {
                 game.Platform = detectedDiscType;
-            }   
+            }
         }
-        
+
         var path = Path.Combine(configuration.OutputDirectory, OutputPath(game));
         var chdFile = GetChdName(game, configuration);
         var chdPath = Path.Combine(path, chdFile);
@@ -121,6 +124,7 @@ public static class Functions
     private static void LoadTitleFromReadme(string readmePath, Game game)
     {
         if (!File.Exists(readmePath)) return;
+        if (game.Modified) return;
         var lines = File.ReadAllLines(readmePath);
         var index = Array.FindIndex(lines, line => line.Contains("**Game name:**"));
         var endIndex = Array.FindIndex(lines, line => line.Contains("**Game ID:**"));
@@ -132,9 +136,10 @@ public static class Functions
     private static void LoadDescriptionFromReadme(string readmePath, Game game)
     {
         if (!File.Exists(readmePath)) return;
+        if (game.Modified) return;
         var lines = File.ReadAllLines(readmePath);
         var index = Array.FindIndex(lines, line => line.Contains("**Description:**"));
-        var description = string.Join("", lines.Skip(index + 1)).Trim();
+        var description = string.Join(Environment.NewLine, lines.Skip(index + 1)).Trim();
         game.Description = description;
     }
 

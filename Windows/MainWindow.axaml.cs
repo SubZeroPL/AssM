@@ -38,12 +38,14 @@ public partial class MainWindow : Window
         CheckBoxOverwriteReadme.IsChecked = Configuration.OverwriteExistingReadmes;
         CheckBoxGetTitleFromCue.IsChecked = Configuration.GetTitleFromCue;
         CheckBoxGameIdAsChdName.IsChecked = Configuration.GameIdAsChdName;
+        CheckBoxProcessModified.IsChecked = Configuration.ProcessOnlyModified;
         Closing += (_, _) =>
         {
             Configuration.OutputDirectory = TextBoxOutputDirectory.Text;
             Configuration.OverwriteExistingReadmes = CheckBoxOverwriteReadme.IsChecked.Value;
             Configuration.GetTitleFromCue = CheckBoxGetTitleFromCue.IsChecked.Value;
             Configuration.GameIdAsChdName = CheckBoxGameIdAsChdName.IsChecked.Value;
+            Configuration.ProcessOnlyModified = CheckBoxProcessModified.IsChecked.Value;
             Configuration.Save();
         };
         if (!string.IsNullOrWhiteSpace(Configuration.OutputDirectory)) AddReadmes(Configuration.OutputDirectory);
@@ -60,12 +62,19 @@ public partial class MainWindow : Window
         var files = await GetTopLevel(this)?.StorageProvider.OpenFilePickerAsync(fpo)!;
         foreach (var file in files)
         {
-            var game = Functions.AddGameToList(file.Path.LocalPath, Configuration, GameList);
-            if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) continue;
-            Functions.LoadExistingData(game, Configuration);
+            AddGame(file.Path.LocalPath);
         }
 
         DataGridGameList.CollectionView.Refresh();
+    }
+
+    private void AddGame(string cuePath)
+    {
+        if (string.IsNullOrWhiteSpace(cuePath)) return;
+        var game = Functions.AddGameToList(cuePath, Configuration, GameList);
+        if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) return;
+        Functions.LoadExistingData(game, Configuration);
+        game.Modified = true;
     }
 
     private void ClearButton_OnClick(object? sender, RoutedEventArgs e)
@@ -126,19 +135,17 @@ public partial class MainWindow : Window
 
     private void TextDescription_OnTextInput(object? sender, TextInputEventArgs e)
     {
-        var selected = DataGridGameList.SelectedIndex;
-        if (selected < 0) return;
-        var item = GameList[selected];
-        item.Description = TextDescription.Text + e.Text;
+        if (DataGridGameList.SelectedItem is not Game game) return;
+        game.Description = TextDescription.Text + e.Text;
+        game.Modified = true;
         DataGridGameList.CollectionView.Refresh();
     }
 
     private void TextTitle_OnTextInput(object? sender, TextInputEventArgs e)
     {
-        var selected = DataGridGameList.SelectedIndex;
-        if (selected < 0) return;
-        var item = GameList[selected];
-        item.Title = TextTitle.Text + e.Text;
+        if (DataGridGameList.SelectedItem is not Game game) return;
+        game.Title = TextTitle.Text + e.Text;
+        game.Modified = true;
         DataGridGameList.CollectionView.Refresh();
     }
 
@@ -224,8 +231,7 @@ public partial class MainWindow : Window
         {
             Functions.LoadExistingData(game, Configuration);
         }
-        DataGridGameList.CollectionView.Refresh();
-        
+
         AddReadmes(dir);
 
         DataGridGameList.CollectionView.Refresh();
@@ -246,6 +252,7 @@ public partial class MainWindow : Window
         switch (e.PropertyName)
         {
             case "ChdData":
+            case "Modified":
                 e.Column.IsVisible = false;
                 break;
             case "CuePath":
@@ -278,10 +285,22 @@ public partial class MainWindow : Window
                 Configuration.ChdProcessing = processing;
         }
         Configuration.OutputDirectory = TextBoxOutputDirectory.Text ?? string.Empty;
+        Configuration.ProcessOnlyModified = CheckBoxProcessModified.IsChecked ?? false;
         Configuration.OverwriteExistingReadmes = CheckBoxOverwriteReadme.IsChecked ?? false;
         Configuration.GetTitleFromCue = CheckBoxGetTitleFromCue.IsChecked ?? false;
         Configuration.GameIdAsChdName = CheckBoxGameIdAsChdName.IsChecked ?? false;
         Configuration.Save();
+        RefreshList();
+    }
+
+    private void RefreshList()
+    {
+        foreach (var game in GameList)
+        {
+            Functions.LoadExistingData(game, Configuration);
+        }
+
+        DataGridGameList.CollectionView.Refresh();
     }
 
     private void ButtonDiscord_OnClick(object? sender, RoutedEventArgs e)
@@ -294,5 +313,27 @@ public partial class MainWindow : Window
     {
         var launcher = GetTopLevel(this)?.Launcher;
         launcher?.LaunchUriAsync(new Uri(Constants.GithubLink));
+    }
+
+    private void DataGridGameList_OnLoadingRow(object? sender, DataGridRowEventArgs e)
+    {
+        if (e.Row.DataContext is not Game game) return;
+        e.Row.FontStyle = game.Modified ? FontStyle.Italic : FontStyle.Normal;
+        MenuItemShowReadme.IsEnabled = game.ReadmeCreated;
+        MenuItemOpenFolder.IsEnabled = !string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text) &&
+                                       Directory.Exists(Path.Combine(TextBoxOutputDirectory.Text,
+                                           Functions.OutputPath(game)));
+    }
+
+    private void MainWindow_OnActivated(object? sender, EventArgs e)
+    {
+        DataGridGameList.CollectionView.Refresh();
+    }
+
+    private void ButtonUpdate_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (ButtonUpdate.Tag is not string tag) return;
+        var launcher = GetTopLevel(this)?.Launcher;
+        launcher?.LaunchUriAsync(new Uri(tag));
     }
 }
