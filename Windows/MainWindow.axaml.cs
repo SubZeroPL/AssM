@@ -70,21 +70,20 @@ public partial class MainWindow : Window
         var client = new HttpClient();
         var request = new HttpRequestMessage
         {
-            RequestUri = new Uri("https://api.github.com/repos/SubZeroPL/AssM/releases"),
+            RequestUri = new Uri(Constants.LatestReleaseLink),
             Method = HttpMethod.Get,
             Headers =
             {
                 Accept = { new MediaTypeWithQualityHeaderValue("application/vnd.github+json") }
             }
         };
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
         request.Headers.UserAgent.Add(new ProductInfoHeaderValue(Assembly.GetExecutingAssembly().GetName().Name!,
             Assembly.GetExecutingAssembly().GetName().Version!.ToString()));
         var response = await client.SendAsync(request);
         if (response.StatusCode != HttpStatusCode.OK) return;
         var json = await response.Content.ReadAsStringAsync();
         var jsonDoc = JsonDocument.Parse(json);
-        if (!jsonDoc.RootElement[0].TryGetProperty("tag_name", out var tagName)) return;
+        if (!jsonDoc.RootElement.TryGetProperty("tag_name", out var tagName)) return;
         var tag = tagName.GetString()?.Replace("v", string.Empty);
         var versionPresent = Version.TryParse(tag, out var version);
         if (!versionPresent || version <= currentVer) return;

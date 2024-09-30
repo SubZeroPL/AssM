@@ -35,6 +35,7 @@ public static partial class Constants
     
     public const string GithubLink = "https://github.com/SubZeroPL/AssM";
     public const string DiscordLink = "https://discord.com/invite/USu77Cktqd";
+    public const string LatestReleaseLink = "https://api.github.com/repos/SubZeroPL/AssM/releases/latest";
 
     public static readonly string[] Steps =
     [
