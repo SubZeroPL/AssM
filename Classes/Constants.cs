@@ -1,17 +1,22 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.IO;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace AssM.Classes;
 
 public static partial class Constants
 {
-    public const string ChdMan = @"Tools\ChdMan.exe";
+    private static bool IsWindows() =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    public static readonly string ChdMan = Path.Combine("Tools", "chdman", IsWindows() ? ".exe" : "");
     public const string ChdManInfo = """
                                      info -i "{0}"
                                      """;
     public const string ChdManConvert = """
                                         createcd -i "{0}" -o "{1}" -f
                                         """;
-    public const string ReadmeTemplate = @"Templates\README-template.md";
+    public static readonly string ReadmeTemplate = Path.Combine("Templates", "README-template.md");
     public const string ReadmeFile = "README.md";
     private const string ChdManVersion = @"chdman - MAME Compressed Hunks of Data \(CHD\) manager (\d\.\d+) \(.+\)";
     [GeneratedRegex(ChdManVersion)]
