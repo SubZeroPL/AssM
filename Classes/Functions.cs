@@ -12,7 +12,7 @@ namespace AssM.Classes;
 
 public static class Functions
 {
-    public static string OutputPath(Game game) => $@"{game.Platform}\{game.Id}";
+    public static string OutputPath(Game game) => Path.Combine(game.Platform.ToString(), game.Id);
 
     public static string GetChdName(Game game, Configuration configuration) => configuration.GameIdAsChdName
         ? $"{game.Id.ToUpper()}.chd"
