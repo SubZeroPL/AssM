@@ -9,7 +9,7 @@ public static partial class Constants
     private static bool IsWindows() =>
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
-    public static readonly string ChdMan = Path.Combine("Tools", "chdman", IsWindows() ? ".exe" : "");
+    public static readonly string ChdMan = string.Join("", Path.Combine("Tools", "chdman"), IsWindows() ? ".exe" : "");
     public const string ChdManInfo = """
                                      info -i "{0}"
                                      """;
