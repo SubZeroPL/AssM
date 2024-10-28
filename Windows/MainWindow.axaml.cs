@@ -17,27 +17,43 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
+using NLog;
 
 namespace AssM.Windows;
 
 public partial class MainWindow : Window
 {
+    private readonly Logger _logger;
     private ObservableCollection<Game> GameList { get; } = [];
     private Configuration Configuration { get; }
 
     public MainWindow()
     {
+        Configuration = Configuration.Load() ?? new Configuration();
+        LogManager.Setup().LoadConfiguration(builder =>
+        {
+            if (Configuration.EnableLogging)
+            {
+                builder.ForLogger().WriteToFile(Path.Combine(AppContext.BaseDirectory, Constants.LogName));   
+            }
+            else
+            {
+                builder.ForLogger().WriteToNil();    
+            }
+        });
+        _logger = LogManager.GetCurrentClassLogger();
         InitializeComponent();
+        _logger.Debug("Getting version info");
         var ver = GetVersion();
         if (ver != null)
         {
+            _logger.Debug($"Version: {ver}");
             Title = $"AssM {ver.Major}.{ver.Minor}.{ver.Build}";
         }
 
         DataGridGameList.ItemsSource = GameList;
         TextTitle.AddHandler(TextInputEvent, TextTitle_OnTextInput, RoutingStrategies.Tunnel);
         TextDescription.AddHandler(TextInputEvent, TextDescription_OnTextInput, RoutingStrategies.Tunnel);
-        Configuration = Configuration.Load() ?? new Configuration();
         TextBoxOutputDirectory.Text = Configuration.OutputDirectory;
         RadioButtonDontGenerate.IsChecked = Configuration.ChdProcessing == ChdProcessing.DontGenerate;
         RadioButtonGenerateMissing.IsChecked = Configuration.ChdProcessing == ChdProcessing.GenerateMissing;
@@ -66,6 +82,7 @@ public partial class MainWindow : Window
 
     private async void CheckForNewVersion()
     {
+        _logger.Debug("Checking for new version");
         var currentVer = GetVersion();
         var client = new HttpClient();
         var request = new HttpRequestMessage
@@ -87,6 +104,7 @@ public partial class MainWindow : Window
         var tag = tagName.GetString()?.Replace("v", string.Empty);
         var versionPresent = Version.TryParse(tag, out var version);
         if (!versionPresent || version <= currentVer) return;
+        _logger.Debug($"New version detected: {tag}");
         TextBlockUpdate.Text = $"New version: {version!.Major}.{version.Minor}.{version.Build}";
         ButtonUpdate.IsVisible = true;
         ButtonUpdate.Tag = jsonDoc.RootElement.GetProperty("html_url").GetString();
