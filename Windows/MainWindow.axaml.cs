@@ -400,4 +400,25 @@ public partial class MainWindow : Window
         var launcher = GetTopLevel(this)?.Launcher;
         launcher?.LaunchUriAsync(new Uri(tag));
     }
+
+    private void DataGridGameList_OnKeyUp(object? sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Delete when e.KeyModifiers == KeyModifiers.Control:
+                ClearButton_OnClick(sender, e);
+                break;
+            case Key.Delete:
+                DeleteButton_OnClick(sender, e);
+                break;
+            case Key.Insert when e.KeyModifiers == KeyModifiers.Control:
+                AddFolderButton_OnClick(sender, e);
+                break;
+            case Key.Insert:
+                AddButton_OnClick(sender, e);
+                break;
+        }
+
+        e.Handled = true;
+    }
 }
