@@ -34,11 +34,11 @@ public partial class MainWindow : Window
         {
             if (Configuration.EnableLogging)
             {
-                builder.ForLogger().WriteToFile(Path.Combine(AppContext.BaseDirectory, Constants.LogName));   
+                builder.ForLogger().WriteToFile(Path.Combine(AppContext.BaseDirectory, Constants.LogName));
             }
             else
             {
-                builder.ForLogger().WriteToNil();    
+                builder.ForLogger().WriteToNil();
             }
         });
         _logger = LogManager.GetCurrentClassLogger();
@@ -214,14 +214,15 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text))
         {
             await MessageBoxManager.GetMessageBoxStandard("Error", "Please provide a valid output directory",
-                ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error).ShowAsync();
+                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner)
+                .ShowWindowDialogAsync(this);
             return;
         }
 
         if (GameList.ToList().Count == 0)
         {
             await MessageBoxManager.GetMessageBoxStandard("Error", "Please provide at least one game", ButtonEnum.Ok,
-                MsBox.Avalonia.Enums.Icon.Error).ShowAsync();
+                MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner).ShowWindowDialogAsync(this);
             return;
         }
 
@@ -230,13 +231,14 @@ public partial class MainWindow : Window
         try
         {
             await progress.Process(GameList.ToList(), Configuration);
-            await MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished").ShowAsync();
+            await MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished",
+                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Success, WindowStartupLocation.CenterOwner)
+                .ShowWindowDialogAsync(progress);
         }
         catch (Exception ex)
         {
-            var box = MessageBoxManager.GetMessageBoxStandard(progress.Title, ex.Message, ButtonEnum.Ok,
-                MsBox.Avalonia.Enums.Icon.Error);
-            await box.ShowAsync();
+            await MessageBoxManager.GetMessageBoxStandard(progress.Title, ex.Message, ButtonEnum.Ok,
+                MsBox.Avalonia.Enums.Icon.Error).ShowWindowDialogAsync(this);
         }
 
         progress.Close();
