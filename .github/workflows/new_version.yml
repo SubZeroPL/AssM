@@ -46,11 +46,11 @@ jobs:
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
-          filename: AssM_${{ steps.get_version.outputs.version }}-win-x64.zip
+          filename: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-win-x64.zip
           directory: bin/Release/net8.0/win-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
       - name: Move artifact
-        run: mv bin/Release/net8.0/win-x64/publish/AssM_${{ steps.get_version.outputs.version }}-win-x64.zip ./
+        run: mv bin/Release/net8.0/win-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-win-x64.zip ./
       - name: Clean
         run: dotnet clean
       - name: Build version (win64, with dotnet)
@@ -59,11 +59,11 @@ jobs:
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
-          filename: AssM_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip
+          filename: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip
           directory: bin/Release/net8.0/win-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
       - name: Move artifact
-        run: mv bin/Release/net8.0/win-x64/publish/AssM_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip ./
+        run: mv bin/Release/net8.0/win-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip ./
       - name: Clean
         run: dotnet clean
       - name: Build version (linux64, no dotnet)
@@ -72,11 +72,11 @@ jobs:
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
-          filename: AssM_${{ steps.get_version.outputs.version }}-linux-x64.zip
+          filename: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-linux-x64.zip
           directory: bin/Release/net8.0/linux-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
       - name: Move artifact
-        run: mv bin/Release/net8.0/linux-x64/publish/AssM_${{ steps.get_version.outputs.version }}-linux-x64.zip ./
+        run: mv bin/Release/net8.0/linux-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-linux-x64.zip ./
       - name: Clean
         run: dotnet clean
       - name: Build version (linux64, with dotnet)
@@ -85,11 +85,11 @@ jobs:
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
-          filename: AssM_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
+          filename: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
           directory: bin/Release/net8.0/linux-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
       - name: Move artifact
-        run: mv bin/Release/net8.0/linux-x64/publish/AssM_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip ./
+        run: mv bin/Release/net8.0/linux-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip ./
       - name: Clean
         run: dotnet clean
       - name: Create tag
@@ -106,8 +106,8 @@ jobs:
         uses: ncipollo/release-action@v1
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.draft_release && !inputs.no_publish }}
         with:
-          artifacts: AssM_${{ steps.get_version.outputs.version }}-win-x64.zip,AssM_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip,AssM_${{ steps.get_version.outputs.version }}-linux-x64.zip,AssM_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
-          name: AssM Release v${{ steps.get_version.outputs.version }}-pre
+          artifacts: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-win-x64.zip,${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip,${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-linux-x64.zip,${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
+          name: ${{ env.PROJECT_NAME }} Release v${{ steps.get_version.outputs.version }}-pre
           tag: v${{ steps.get_version.outputs.version }}_pre
           commit: master
           prerelease: true
@@ -119,8 +119,8 @@ jobs:
         uses: ncipollo/release-action@v1
         if: ${{ !inputs.draft_release && !inputs.no_publish }}
         with:
-          artifacts: AssM_${{ steps.get_version.outputs.version }}-win-x64.zip,AssM_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip,AssM_${{ steps.get_version.outputs.version }}-linux-x64.zip,AssM_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
-          name: AssM Release v${{ steps.get_version.outputs.version }}
+          artifacts: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-win-x64.zip,${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip,${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-linux-x64.zip,${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
+          name: ${{ env.PROJECT_NAME }} Release v${{ steps.get_version.outputs.version }}
           tag: v${{ steps.get_version.outputs.version }}
           commit: master
           prerelease: false
