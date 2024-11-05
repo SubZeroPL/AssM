@@ -17,27 +17,43 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
+using NLog;
 
 namespace AssM.Windows;
 
 public partial class MainWindow : Window
 {
+    private readonly Logger _logger;
     private ObservableCollection<Game> GameList { get; } = [];
     private Configuration Configuration { get; }
 
     public MainWindow()
     {
+        Configuration = Configuration.Load() ?? new Configuration();
+        LogManager.Setup().LoadConfiguration(builder =>
+        {
+            if (Configuration.EnableLogging)
+            {
+                builder.ForLogger().WriteToFile(Path.Combine(AppContext.BaseDirectory, Constants.LogName));
+            }
+            else
+            {
+                builder.ForLogger().WriteToNil();
+            }
+        });
+        _logger = LogManager.GetCurrentClassLogger();
         InitializeComponent();
+        _logger.Debug("Getting version info");
         var ver = GetVersion();
         if (ver != null)
         {
+            _logger.Debug($"Version: {ver}");
             Title = $"AssM {ver.Major}.{ver.Minor}.{ver.Build}";
         }
 
         DataGridGameList.ItemsSource = GameList;
         TextTitle.AddHandler(TextInputEvent, TextTitle_OnTextInput, RoutingStrategies.Tunnel);
         TextDescription.AddHandler(TextInputEvent, TextDescription_OnTextInput, RoutingStrategies.Tunnel);
-        Configuration = Configuration.Load() ?? new Configuration();
         TextBoxOutputDirectory.Text = Configuration.OutputDirectory;
         RadioButtonDontGenerate.IsChecked = Configuration.ChdProcessing == ChdProcessing.DontGenerate;
         RadioButtonGenerateMissing.IsChecked = Configuration.ChdProcessing == ChdProcessing.GenerateMissing;
@@ -66,6 +82,7 @@ public partial class MainWindow : Window
 
     private async void CheckForNewVersion()
     {
+        _logger.Debug("Checking for new version");
         var currentVer = GetVersion();
         var client = new HttpClient();
         var request = new HttpRequestMessage
@@ -87,6 +104,7 @@ public partial class MainWindow : Window
         var tag = tagName.GetString()?.Replace("v", string.Empty);
         var versionPresent = Version.TryParse(tag, out var version);
         if (!versionPresent || version <= currentVer) return;
+        _logger.Debug($"New version detected: {tag}");
         TextBlockUpdate.Text = $"New version: {version!.Major}.{version.Minor}.{version.Build}";
         ButtonUpdate.IsVisible = true;
         ButtonUpdate.Tag = jsonDoc.RootElement.GetProperty("html_url").GetString();
@@ -196,14 +214,15 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text))
         {
             await MessageBoxManager.GetMessageBoxStandard("Error", "Please provide a valid output directory",
-                ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error).ShowAsync();
+                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner)
+                .ShowWindowDialogAsync(this);
             return;
         }
 
         if (GameList.ToList().Count == 0)
         {
             await MessageBoxManager.GetMessageBoxStandard("Error", "Please provide at least one game", ButtonEnum.Ok,
-                MsBox.Avalonia.Enums.Icon.Error).ShowAsync();
+                MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner).ShowWindowDialogAsync(this);
             return;
         }
 
@@ -212,13 +231,14 @@ public partial class MainWindow : Window
         try
         {
             await progress.Process(GameList.ToList(), Configuration);
-            await MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished").ShowAsync();
+            await MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished",
+                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Success, WindowStartupLocation.CenterOwner)
+                .ShowWindowDialogAsync(progress);
         }
         catch (Exception ex)
         {
-            var box = MessageBoxManager.GetMessageBoxStandard(progress.Title, ex.Message, ButtonEnum.Ok,
-                MsBox.Avalonia.Enums.Icon.Error);
-            await box.ShowAsync();
+            await MessageBoxManager.GetMessageBoxStandard(progress.Title, ex.Message, ButtonEnum.Ok,
+                MsBox.Avalonia.Enums.Icon.Error).ShowWindowDialogAsync(this);
         }
 
         progress.Close();
@@ -379,5 +399,26 @@ public partial class MainWindow : Window
         if (ButtonUpdate.Tag is not string tag) return;
         var launcher = GetTopLevel(this)?.Launcher;
         launcher?.LaunchUriAsync(new Uri(tag));
+    }
+
+    private void DataGridGameList_OnKeyUp(object? sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Delete when e.KeyModifiers == KeyModifiers.Control:
+                ClearButton_OnClick(sender, e);
+                break;
+            case Key.Delete:
+                DeleteButton_OnClick(sender, e);
+                break;
+            case Key.Insert when e.KeyModifiers == KeyModifiers.Control:
+                AddFolderButton_OnClick(sender, e);
+                break;
+            case Key.Insert:
+                AddButton_OnClick(sender, e);
+                break;
+        }
+
+        e.Handled = true;
     }
 }

@@ -16,7 +16,7 @@
         <Panel Margin="5" DockPanel.Dock="Bottom">
             <Grid ColumnDefinitions="*, *, *">
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button Click="StartProcessingButton_OnClick">Start processing</Button>
+                    <Button Click="StartProcessingButton_OnClick">_Start processing</Button>
                     <Button ToolTip.Tip="Configuration">
                         <Panel>
                             <PathIcon Data="{StaticResource SettingsRegular}" />
@@ -48,7 +48,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Name="ButtonUpdate" Click="ButtonUpdate_OnClick" ToolTip.Tip="New version available!" IsVisible="False">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Name="TextBlockUpdate">New version 1.4.0</TextBlock>
+                            <TextBlock Name="TextBlockUpdate">New version 0.0.0</TextBlock>
                             <PathIcon Data="{StaticResource Important}" />
                         </StackPanel>
                     </Button>
@@ -68,7 +68,7 @@
         <StackPanel DockPanel.Dock="Top" Margin="5">
             <Label Target="TextBoxOutputDirectory">Output directory:</Label>
             <DockPanel>
-                <Button DockPanel.Dock="Right" Click="SelectOutputFolderButton_OnClick">Select</Button>
+                <Button DockPanel.Dock="Right" Click="SelectOutputFolderButton_OnClick">S_elect</Button>
                 <TextBox Name="TextBoxOutputDirectory" TextInput="TextBoxOutputDirectory_OnTextInput" Margin="0 0 5 0"></TextBox>
             </DockPanel>
         </StackPanel>
@@ -111,10 +111,10 @@
         </TabControl>
         <DockPanel Margin="5">
             <StackPanel DockPanel.Dock="Right">
-                <Button Click="AddButton_OnClick">Add</Button>
-                <Button Click="AddFolderButton_OnClick">Add folder</Button>
-                <Button Click="DeleteButton_OnClick">Delete</Button>
-                <Button Click="ClearButton_OnClick">Clear all</Button>
+                <Button Click="AddButton_OnClick" ToolTip.Tip="Insert">_Add</Button>
+                <Button Click="AddFolderButton_OnClick" ToolTip.Tip="Ctrl+Insert">Add _folder</Button>
+                <Button Click="DeleteButton_OnClick" ToolTip.Tip="Delete">_Delete</Button>
+                <Button Click="ClearButton_OnClick" ToolTip.Tip="Ctrl+Delete">_Clear all</Button>
             </StackPanel>
             <DataGrid Name="DataGridGameList" AutoGenerateColumns="True" GridLinesVisibility="All"
                       CanUserReorderColumns="True" CanUserResizeColumns="True" IsReadOnly="True" BorderThickness="1"
@@ -122,6 +122,7 @@
                       SelectionMode="Single"
                       AutoGeneratingColumn="DataGridGameList_OnAutoGeneratingColumn"
                       LoadingRow="DataGridGameList_OnLoadingRow"
+                      KeyUp="DataGridGameList_OnKeyUp"
                       SelectionChanged="DataGridGameList_OnSelectionChanged">
                 <DataGrid.ContextFlyout>
                     <MenuFlyout>

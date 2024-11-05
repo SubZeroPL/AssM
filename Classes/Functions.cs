@@ -4,14 +4,18 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 using AssM.Data;
 using Avalonia.Threading;
 using DiscTools;
+using NLog;
 
 namespace AssM.Classes;
 
 public static class Functions
 {
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     public static string OutputPath(Game game) => Path.Combine(game.Platform.ToString(), game.Id);
 
     public static string GetChdName(Game game, Configuration configuration) => configuration.GameIdAsChdName
@@ -20,6 +24,7 @@ public static class Functions
 
     public static void LoadChdManInfo(string chdPath, Game game)
     {
+        Logger.Debug($"Loading chdMan info from {chdPath}");
         if (!File.Exists(chdPath)) return;
         var chdmanInfo = new Process
         {
@@ -50,6 +55,7 @@ public static class Functions
 
         if (error.Count != 0)
         {
+            Logger.Error($"Failed to load chdMan info from {chdPath}\n{error}");
             throw new ProcessingException(string.Join(Environment.NewLine, error));
         }
 
@@ -78,10 +84,12 @@ public static class Functions
         game.ChdData.Sha1Hash = sha1.ToUpperInvariant();
         game.ChdData.DataSha1Hash = dataSha1.ToUpperInvariant();
         game.ChdCreated = true;
+        Logger.Debug($"Loaded chdMan info from {chdPath}");
     }
 
     public static void LoadExistingData(Game game, Configuration configuration, string? readmePath = null)
     {
+        Logger.Debug($"Loading existing data from {readmePath} for game {game.Title}");
         if (string.IsNullOrWhiteSpace(configuration.OutputDirectory)) return;
 
         readmePath ??= Path.Combine(configuration.OutputDirectory, OutputPath(game), Constants.ReadmeFile);
@@ -119,10 +127,12 @@ public static class Functions
         var chdPath = Path.Combine(path, chdFile);
         if (File.Exists(chdPath)) LoadChdManInfo(chdPath, game);
         else game.ChdCreated = false;
+        Logger.Debug($"Loaded existing data from {readmePath} for game {game.Title}");
     }
 
     private static void LoadTitleFromReadme(string readmePath, Game game)
     {
+        Logger.Debug($"Loading title from {readmePath}");
         if (!File.Exists(readmePath)) return;
         if (game.Modified) return;
         var lines = File.ReadAllLines(readmePath);
@@ -135,6 +145,7 @@ public static class Functions
 
     private static void LoadDescriptionFromReadme(string readmePath, Game game)
     {
+        Logger.Debug($"Loading description from {readmePath}");
         if (!File.Exists(readmePath)) return;
         if (game.Modified) return;
         var lines = File.ReadAllLines(readmePath);
@@ -145,6 +156,7 @@ public static class Functions
 
     private static void LoadGameIdFromReadme(string readmePath, Game game)
     {
+        Logger.Debug($"Loading game id from {readmePath}");
         if (!File.Exists(readmePath)) return;
         var lines = File.ReadAllLines(readmePath);
         var index = Array.FindIndex(lines, line => line.Contains("**Game ID:**"));
@@ -155,6 +167,7 @@ public static class Functions
 
     private static void LoadTrackInfoFromReadme(string readmePath, Game game)
     {
+        Logger.Debug($"Loading track info from {readmePath}");
         if (!File.Exists(readmePath)) return;
         if (game.ChdData.TrackInfo.Count != 0) return;
         var lines = File.ReadAllLines(readmePath);
@@ -171,6 +184,7 @@ public static class Functions
 
     public static List<string> GetCueFilesInDirectory(string directory)
     {
+        Logger.Debug($"Getting cue files from {directory}");
         var result = Directory.GetFiles(directory).Where(d => Path.GetExtension(d) == ".cue").ToList();
         Directory.GetDirectories(directory).ToList().ForEach(d => result.AddRange(GetCueFilesInDirectory(d)));
         return result;
@@ -178,6 +192,7 @@ public static class Functions
 
     public static List<string> GetReadmeFilesInDirectory(string directory)
     {
+        Logger.Debug($"Getting readme files from {directory}");
         var result = Directory.GetFiles(directory).Where(file => Path.GetFileName(file) == Constants.ReadmeFile)
             .ToList();
         Directory.GetDirectories(directory).ToList().ForEach(d => result.AddRange(GetReadmeFilesInDirectory(d)));
@@ -186,6 +201,7 @@ public static class Functions
 
     public static Game AddGameToList(string cuePath, Configuration configuration, ObservableCollection<Game> gameList)
     {
+        Logger.Debug($"Adding game to list from {cuePath}");
         var di = DiscInspector.ScanDisc(cuePath);
         var title = configuration.GetTitleFromCue ? Path.GetFileNameWithoutExtension(cuePath) : di.Data.GameTitle;
         var game = new Game
@@ -196,6 +212,7 @@ public static class Functions
         var existingGame = gameList.FirstOrDefault(g => g.Id == game.Id);
         if (existingGame != null)
         {
+            Logger.Debug($"Game already exists: {existingGame.Title}, updating");
             existingGame.Title = game.Title;
             existingGame.Platform = game.Platform;
             existingGame.CuePath = game.CuePath;
@@ -207,5 +224,32 @@ public static class Functions
         }
 
         return game;
+    }
+
+    public static async Task ProcessJson(Configuration configuration, Game game, Action<double> reportProgress)
+    {
+        Logger.Debug("Processing json");
+        try
+        {
+            if (!File.Exists("JAssOn.dll"))
+            {
+                Logger.Debug("...or not");
+                return;
+            }
+            var lib = Assembly.LoadFrom("JAssOn.dll");
+            Logger.Debug($"version: {lib.GetName()?.Version?.ToString(3)}");
+            var cls = lib.GetType("JAssOn.Ldrr");
+            if (cls == null) return;
+            dynamic? inst = Activator.CreateInstance(cls);
+            if (inst == null) return;
+            await Task.Run(() =>
+            {
+                inst.ProcessJson(configuration.OutputDirectory, game.Id, game.Title, reportProgress); 
+            });
+        }
+        catch (Exception e)
+        {
+            Logger.Debug($"Json processing cancelled: {e}");
+        }
     }
 }
