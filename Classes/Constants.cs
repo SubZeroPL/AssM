@@ -41,7 +41,7 @@ public static partial class Constants
     public const string GithubLink = "https://github.com/SubZeroPL/AssM";
     public const string DiscordLink = "https://discord.com/invite/USu77Cktqd";
     public const string LatestReleaseLink = "https://api.github.com/repos/SubZeroPL/AssM/releases/latest";
-    
+
     public const string LogName = "Debug.log";
 
     public static readonly string[] Steps =
@@ -50,6 +50,7 @@ public static partial class Constants
         "Conversion to CHD",
         "Calculating tracks MD5",
         "Getting CHD info",
-        "Generating README"
+        "Generating README",
+        "Process JSON"
     ];
 }

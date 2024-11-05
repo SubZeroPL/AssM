@@ -8,7 +8,6 @@ public class Configuration
 {
     public string OutputDirectory { get; set; } = string.Empty;
     public ChdProcessing ChdProcessing { get; set; }
-
     public bool ProcessOnlyModified { get; set; }
     public bool OverwriteExistingReadmes { get; set; }
     public bool GetTitleFromCue { get; set; }
@@ -35,5 +34,10 @@ public class Configuration
     {
         var jsonString = JsonSerializer.Serialize(this, Options);
         File.WriteAllText(FileName, jsonString);
+    }
+
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this, Options);
     }
 }

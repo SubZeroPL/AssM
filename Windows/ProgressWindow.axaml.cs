@@ -36,8 +36,9 @@ public partial class ProgressWindow : Window
 
         for (var i = 0; i < gameList.Count; i++)
         {
+            UpdateProgress(0.0);
             var game = gameList.ElementAt(i);
-            _logger.Debug($"Processing game {i}: {game.Title}");
+            _logger.Debug($"Processing game {i + 1}: {game.Title}");
             if (_configuration.ProcessOnlyModified && !game.Modified)
             {
                 _logger.Debug($"Skipping game {i}: Not modified");
@@ -53,8 +54,10 @@ public partial class ProgressWindow : Window
             await CalculateTracksMd5(game, UpdateProgress);
             LabelStep.Content = Constants.Steps[step++];
             GetChdManInfo(game);
-            LabelStep.Content = Constants.Steps[step];
+            LabelStep.Content = Constants.Steps[step++];
             GenerateReadme(game);
+            LabelStep.Content = Constants.Steps[step];
+            await Functions.ProcessJson(_configuration, game, UpdateProgress);
             game.Modified = false;
             _logger.Debug($"Finished processing game {i}: {game.Title}");
         }
