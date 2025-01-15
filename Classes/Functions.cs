@@ -59,22 +59,6 @@ public static class Functions
             throw new ProcessingException(string.Join(Environment.NewLine, error));
         }
 
-        /*
-            [0]: "chdman - MAME Compressed Hunks of Data (CHD) manager 0.257 (mame0257)"
-            [1]: "Input file:   G:\\test\\psx\\Tekken 3 (USA)\\Tekken 3 (USA).chd"
-            [2]: "File Version: 5"
-            [3]: "Logical size: 716,382,720 bytes"
-            [4]: "Hunk Size:    19,584 bytes"
-            [5]: "Total Hunks:  36,580"
-            [6]: "Unit Size:    2,448 bytes"
-            [7]: "Total Units:  292,640"
-            [8]: "Compression:  cdlz (CD LZMA), cdzl (CD Deflate), cdfl (CD FLAC)"
-            [9]: "CHD size:     459,654,890 bytes"
-            [10]: "Ratio:        64.2%"
-            [11]: "SHA1:         319ec7377eb0c3ef0b6049e440937d26ae743290"
-            [12]: "Data SHA1:    2685e94ac98b12f8771db38051f1c2622f0bbc7a"
-         */
-
         var matches = Constants.ChdManVersionRegex().Matches(output[0]);
         game.ChdData.ChdManVersion = matches[0].Groups[1].Value;
         var version = int.Parse(output[2].Split(':').Last().Trim());
@@ -150,6 +134,11 @@ public static class Functions
         if (game.Modified) return;
         var lines = File.ReadAllLines(readmePath);
         var index = Array.FindIndex(lines, line => line.Contains("**Description:**"));
+        if (index < 0)
+        {
+            Logger.Error($"Failed to load description from {readmePath}");
+            return;
+        }
         var description = string.Join(Environment.NewLine, lines.Skip(index + 1)).Trim();
         game.Description = description;
     }
@@ -160,6 +149,11 @@ public static class Functions
         if (!File.Exists(readmePath)) return;
         var lines = File.ReadAllLines(readmePath);
         var index = Array.FindIndex(lines, line => line.Contains("**Game ID:**"));
+        if (index < 0)
+        {
+            Logger.Error($"Failed to load game id from {readmePath}");
+            return;
+        }
         var id = string.Join("", lines.Skip(index + 1).Take(3)).Trim();
         if (!string.IsNullOrEmpty(id)) game.Id = id;
         game.ReadmeCreated = true;
@@ -172,13 +166,34 @@ public static class Functions
         if (game.ChdData.TrackInfo.Count != 0) return;
         var lines = File.ReadAllLines(readmePath);
         var startIndex = Array.FindIndex(lines, line => line.Contains("**Hash:**")) + 1;
+        if (startIndex < 0)
+        {
+            Logger.Error($"Failed to load track info from {readmePath}");
+            return;
+        }
         var endIndex = Array.FindIndex(lines, line => line.Contains("**Description:**")) - 1;
         var hashes = lines.Skip(startIndex).Take(endIndex - startIndex).Where(item => item.StartsWith("BIN"));
         foreach (var hashLine in hashes)
         {
-            var trackId = int.Parse(Constants.BinHashRegex().Matches(hashLine)[0].Groups[1].Value.Trim());
-            var trackHash = Constants.BinHashRegex().Matches(hashLine)[0].Groups[2].Value.Trim();
-            game.ChdData.TrackInfo.Add((trackId, trackHash));
+            var matches = Constants.BinHashRegex().Matches(hashLine);
+            if (matches.Count == 0)
+            {
+                Logger.Error($"Failed to load track info from {readmePath}");
+                return;
+            }
+
+            try
+            {
+                var trackId = int.Parse(matches[0].Groups[1].Value.Trim());
+                var trackHash = matches[0].Groups[2].Value.Trim();
+                game.ChdData.TrackInfo.Add((trackId, trackHash));
+            }
+            catch (ArgumentOutOfRangeException e)
+            {
+                Logger.Error($"Failed to load track info from {readmePath}");
+                Logger.Error(e);
+                return;
+            }
         }
     }
 
@@ -237,7 +252,7 @@ public static class Functions
                 return;
             }
             var lib = Assembly.LoadFrom("JAssOn.dll");
-            Logger.Debug($"version: {lib.GetName()?.Version?.ToString(3)}");
+            Logger.Debug($"version: {lib.GetName().Version?.ToString(3)}");
             var cls = lib.GetType("JAssOn.Ldrr");
             if (cls == null) return;
             dynamic? inst = Activator.CreateInstance(cls);

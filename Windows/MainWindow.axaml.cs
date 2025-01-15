@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading.Tasks;
 using AssM.Classes;
 using AssM.Data;
 using Avalonia.Controls;
@@ -72,7 +74,7 @@ public partial class MainWindow : Window
             Configuration.Save();
         };
         if (!string.IsNullOrWhiteSpace(Configuration.OutputDirectory)) AddReadmes(Configuration.OutputDirectory);
-        CheckForNewVersion();
+        _ = CheckForNewVersion();
     }
 
     private static Version? GetVersion()
@@ -80,7 +82,7 @@ public partial class MainWindow : Window
         return Assembly.GetEntryAssembly()?.GetName().Version;
     }
 
-    private async void CheckForNewVersion()
+    private async Task CheckForNewVersion()
     {
         _logger.Debug("Checking for new version");
         var currentVer = GetVersion();
@@ -110,7 +112,7 @@ public partial class MainWindow : Window
         ButtonUpdate.Tag = jsonDoc.RootElement.GetProperty("html_url").GetString();
     }
 
-    private async void AddButton_OnClick(object? sender, RoutedEventArgs e)
+    private void AddButton_OnClick(object? sender, RoutedEventArgs e)
     {
         var fpo = new FilePickerOpenOptions
         {
@@ -118,7 +120,8 @@ public partial class MainWindow : Window
             Title = "Select images",
             FileTypeFilter = [new FilePickerFileType("CUE file") { Patterns = ["*.cue"] }]
         };
-        var files = await GetTopLevel(this)?.StorageProvider.OpenFilePickerAsync(fpo)!;
+        var files = GetTopLevel(this)?.StorageProvider.OpenFilePickerAsync(fpo).GetAwaiter().GetResult() ??
+                    new List<IStorageFile>();
         foreach (var file in files)
         {
             AddGame(file.Path.LocalPath);
@@ -148,18 +151,19 @@ public partial class MainWindow : Window
         TextBoxTrackInfo.Clear();
     }
 
-    private async void AddFolderButton_OnClick(object? sender, RoutedEventArgs e)
+    private void AddFolderButton_OnClick(object? sender, RoutedEventArgs e)
     {
         var fpo = new FolderPickerOpenOptions
         {
             Title = "Select folder with images"
         };
 
-        var dirs = (await GetTopLevel(this)?.StorageProvider.OpenFolderPickerAsync(fpo)!).Select(d => d.Path.LocalPath)
-            .ToList();
+        var dirs = GetTopLevel(this)?.StorageProvider.OpenFolderPickerAsync(fpo).GetAwaiter().GetResult()
+            .Select(d => d.Path.LocalPath)
+            .ToList() ?? [];
         var progress = new AddFolderProgressWindow();
         _ = progress.ShowDialog(this);
-        await progress.Process(dirs, GameList, Configuration);
+        progress.Process(dirs, GameList, Configuration).GetAwaiter().GetResult();
         progress.Close();
         DataGridGameList.CollectionView.Refresh();
     }
@@ -209,20 +213,21 @@ public partial class MainWindow : Window
         DataGridGameList.CollectionView.Refresh();
     }
 
-    private async void StartProcessingButton_OnClick(object? sender, RoutedEventArgs e)
+    private void StartProcessingButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text))
         {
-            await MessageBoxManager.GetMessageBoxStandard("Error", "Please provide a valid output directory",
+            MessageBoxManager.GetMessageBoxStandard("Error", "Please provide a valid output directory",
                     ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner)
-                .ShowWindowDialogAsync(this);
+                .ShowWindowDialogAsync(this).GetAwaiter().GetResult();
             return;
         }
 
         if (GameList.ToList().Count == 0)
         {
-            await MessageBoxManager.GetMessageBoxStandard("Error", "Please provide at least one game", ButtonEnum.Ok,
-                MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner).ShowWindowDialogAsync(this);
+            MessageBoxManager.GetMessageBoxStandard("Error", "Please provide at least one game", ButtonEnum.Ok,
+                    MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner).ShowWindowDialogAsync(this)
+                .GetAwaiter().GetResult();
             return;
         }
 
@@ -230,15 +235,15 @@ public partial class MainWindow : Window
         _ = progress.ShowDialog(this);
         try
         {
-            await progress.Process(GameList.ToList(), Configuration);
-            await MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished",
+            progress.Process(GameList.ToList(), Configuration).GetAwaiter().GetResult();
+            MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished",
                     ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Success, WindowStartupLocation.CenterOwner)
-                .ShowWindowDialogAsync(progress);
+                .ShowWindowDialogAsync(progress).GetAwaiter().GetResult();
         }
         catch (Exception ex)
         {
-            await MessageBoxManager.GetMessageBoxStandard(progress.Title, ex.Message, ButtonEnum.Ok,
-                MsBox.Avalonia.Enums.Icon.Error).ShowWindowDialogAsync(this);
+            MessageBoxManager.GetMessageBoxStandard(progress.Title ?? "Error", ex.Message, ButtonEnum.Ok,
+                MsBox.Avalonia.Enums.Icon.Error).ShowWindowDialogAsync(this).GetAwaiter().GetResult();
         }
 
         progress.Close();
@@ -261,14 +266,15 @@ public partial class MainWindow : Window
         DataGridGameList.CollectionView.Refresh();
     }
 
-    private async void SelectOutputFolderButton_OnClick(object? sender, RoutedEventArgs e)
+    private void SelectOutputFolderButton_OnClick(object? sender, RoutedEventArgs e)
     {
         var fpo = new FolderPickerOpenOptions
         {
             Title = "Select output folder",
             AllowMultiple = false
         };
-        var dirs = await GetTopLevel(this)?.StorageProvider.OpenFolderPickerAsync(fpo)!;
+        var dirs = GetTopLevel(this)?.StorageProvider.OpenFolderPickerAsync(fpo).GetAwaiter().GetResult() ??
+                   new List<IStorageFolder>();
         if (!dirs.Any()) return;
         var dir = dirs[0];
         TextBoxOutputDirectory.Text = dir.Path.LocalPath;
@@ -300,14 +306,14 @@ public partial class MainWindow : Window
         DataGridGameList.CollectionView.Refresh();
     }
 
-    private async void MenuItemShowReadme_OnClick(object? sender, RoutedEventArgs e)
+    private void MenuItemShowReadme_OnClick(object? sender, RoutedEventArgs e)
     {
         if (DataGridGameList.SelectedIndex < 0) return;
         if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) return;
         if (DataGridGameList?.SelectedItem is not Game game) return;
         var readmePath = Path.Combine(TextBoxOutputDirectory.Text, Functions.OutputPath(game), Constants.ReadmeFile);
         if (!File.Exists(readmePath)) return;
-        await new ReadmePreviewWindow(readmePath, game.Title).ShowDialog(this);
+        new ReadmePreviewWindow(readmePath, game.Title).ShowDialog(this);
     }
 
     private void DataGridGameList_OnAutoGeneratingColumn(object? sender, DataGridAutoGeneratingColumnEventArgs e)
