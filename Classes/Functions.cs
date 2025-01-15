@@ -150,6 +150,11 @@ public static class Functions
         if (game.Modified) return;
         var lines = File.ReadAllLines(readmePath);
         var index = Array.FindIndex(lines, line => line.Contains("**Description:**"));
+        if (index < 0)
+        {
+            Logger.Error($"Failed to load description from {readmePath}");
+            return;
+        }
         var description = string.Join(Environment.NewLine, lines.Skip(index + 1)).Trim();
         game.Description = description;
     }
@@ -160,6 +165,11 @@ public static class Functions
         if (!File.Exists(readmePath)) return;
         var lines = File.ReadAllLines(readmePath);
         var index = Array.FindIndex(lines, line => line.Contains("**Game ID:**"));
+        if (index < 0)
+        {
+            Logger.Error($"Failed to load game id from {readmePath}");
+            return;
+        }
         var id = string.Join("", lines.Skip(index + 1).Take(3)).Trim();
         if (!string.IsNullOrEmpty(id)) game.Id = id;
         game.ReadmeCreated = true;
@@ -172,13 +182,34 @@ public static class Functions
         if (game.ChdData.TrackInfo.Count != 0) return;
         var lines = File.ReadAllLines(readmePath);
         var startIndex = Array.FindIndex(lines, line => line.Contains("**Hash:**")) + 1;
+        if (startIndex < 0)
+        {
+            Logger.Error($"Failed to load track info from {readmePath}");
+            return;
+        }
         var endIndex = Array.FindIndex(lines, line => line.Contains("**Description:**")) - 1;
         var hashes = lines.Skip(startIndex).Take(endIndex - startIndex).Where(item => item.StartsWith("BIN"));
         foreach (var hashLine in hashes)
         {
-            var trackId = int.Parse(Constants.BinHashRegex().Matches(hashLine)[0].Groups[1].Value.Trim());
-            var trackHash = Constants.BinHashRegex().Matches(hashLine)[0].Groups[2].Value.Trim();
-            game.ChdData.TrackInfo.Add((trackId, trackHash));
+            var matches = Constants.BinHashRegex().Matches(hashLine);
+            if (matches.Count == 0)
+            {
+                Logger.Error($"Failed to load track info from {readmePath}");
+                return;
+            }
+
+            try
+            {
+                var trackId = int.Parse(matches[0].Groups[1].Value.Trim());
+                var trackHash = matches[0].Groups[2].Value.Trim();
+                game.ChdData.TrackInfo.Add((trackId, trackHash));
+            }
+            catch (ArgumentOutOfRangeException e)
+            {
+                Logger.Error($"Failed to load track info from {readmePath}");
+                Logger.Error(e);
+                return;
+            }
         }
     }
 
