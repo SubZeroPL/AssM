@@ -48,7 +48,7 @@ public static partial class Constants
     [
         "",
         "Conversion to CHD",
-        "Calculating tracks MD5",
+        "Calculating tracks MD5 ({0} of {1})",
         "Getting CHD info",
         "Generating README",
         "Process JSON"

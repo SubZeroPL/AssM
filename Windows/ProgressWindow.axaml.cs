@@ -1,79 +1,113 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
+using System.Text;
 using AssM.Classes;
 using AssM.Data;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Threading;
 using NLog;
+using Org.BouncyCastle.Crypto.Digests;
 
 namespace AssM.Windows;
+
+internal class ProgressUpdateObject
+{
+    public string? Title { get; init; }
+    public int? Count { get; init; }
+    public int? Index { get; init; }
+    public int? Step { get; init; }
+    public int? BinNo { get; init; }
+    public int? BinCount { get; init; }
+}
 
 public partial class ProgressWindow : Window
 {
     private readonly Logger _logger;
-    private bool _cancelled;
     private Configuration _configuration;
+    private readonly BackgroundWorker _worker;
 
     public ProgressWindow()
     {
         _logger = LogManager.GetCurrentClassLogger();
         InitializeComponent();
         _configuration = new Configuration();
+        _worker = new BackgroundWorker();
+        _worker.WorkerReportsProgress = true;
+        _worker.WorkerSupportsCancellation = true;
+        _worker.ProgressChanged += UpdateProgress;
     }
 
-    public async Task Process(List<Game> gameList, Configuration configuration)
+    public void Process(List<Game> gameList, Configuration configuration, Action finishedCallback)
     {
         _logger.Debug("Starting processing");
         _configuration = configuration;
         _logger.Debug($"Configuration: {_configuration}");
 
-        for (var i = 0; i < gameList.Count; i++)
+        _worker.DoWork += (_, _) =>
         {
-            UpdateProgress(0.0);
-            var game = gameList.ElementAt(i);
-            _logger.Debug($"Processing game {i + 1}: {game.Title}");
-            if (_configuration.ProcessOnlyModified && !game.Modified)
+            for (var i = 0; i < gameList.Count; i++)
             {
-                _logger.Debug($"Skipping game {i}: Not modified");
-                continue;
+                _worker.ReportProgress(0);
+                if (_worker.CancellationPending)
+                    break;
+                var game = gameList.ElementAt(i);
+                _logger.Debug($"Processing game {i + 1}: {game.Title}");
+                if (_configuration.ProcessOnlyModified && !game.Modified)
+                {
+                    _logger.Debug($"Skipping game {i + 1}: Not modified");
+                    return;
+                }
+
+                var step = 1;
+                _worker.ReportProgress(0,
+                    new ProgressUpdateObject
+                        { Title = game.Title, Count = gameList.Count, Step = step, Index = i + 1 });
+                ConvertSingleChd(game);
+                _worker.ReportProgress(0, new ProgressUpdateObject { Step = step++ });
+                CalculateTracksMd5(game);
+                _worker.ReportProgress(0, new ProgressUpdateObject { Step = step++ });
+                GetChdManInfo(game);
+                _worker.ReportProgress(0, new ProgressUpdateObject { Step = step++ });
+                GenerateReadme(game);
+                _worker.ReportProgress(0, new ProgressUpdateObject { Step = step });
+                Functions.ProcessJson(_configuration, game, d => { _worker.ReportProgress((int)d); });
+                game.Modified = false;
+                _logger.Debug($"Finished processing game {i + 1}: {game.Title}");
             }
-            LabelGameTitle.Content = game.Title;
-            LabelAll.Content = gameList.Count;
-            LabelIndex.Content = i + 1;
-            var step = 1;
-            LabelStep.Content = Constants.Steps[step++];
-            await ConvertSingleChd(game, UpdateProgress);
-            LabelStep.Content = Constants.Steps[step++];
-            await CalculateTracksMd5(game, UpdateProgress);
-            LabelStep.Content = Constants.Steps[step++];
-            GetChdManInfo(game);
-            LabelStep.Content = Constants.Steps[step++];
-            GenerateReadme(game);
-            LabelStep.Content = Constants.Steps[step];
-            await Functions.ProcessJson(_configuration, game, UpdateProgress);
-            game.Modified = false;
-            _logger.Debug($"Finished processing game {i}: {game.Title}");
-        }
+        };
 
-        _logger.Debug("Finished processing");
+        _worker.RunWorkerCompleted += (_, _) =>
+        {
+            _logger.Debug("Finished processing");
+            finishedCallback.Invoke();
+        };
+
+        _worker.RunWorkerAsync();
     }
 
-    private void UpdateProgress(double progress)
+    private void UpdateProgress(object? sender, ProgressChangedEventArgs progressChangedEventArgs)
     {
-        Dispatcher.UIThread.InvokeAsync(() => { ProgressBarProgress.Value = progress; });
+        ProgressBarProgress.Value = progressChangedEventArgs.ProgressPercentage;
+        if (progressChangedEventArgs.UserState is not ProgressUpdateObject progress) return;
+        LabelGameTitle.Content = progress.Title ?? LabelGameTitle.Content;
+        LabelAll.Content = progress.Count ?? LabelAll.Content;
+        LabelIndex.Content = progress.Index ?? LabelIndex.Content;
+        LabelStep.Content = progress.Step != null ? Constants.Steps[progress.Step ?? 0] : LabelStep.Content;
+        if (progress is { Step: 2, BinNo: not null })
+        {
+            LabelStep.Content = string.Format(Constants.Steps[progress.Step ?? 2], progress.BinNo, progress.BinCount);
+        }
     }
 
-    private async Task ConvertSingleChd(Game game, Action<double> reportProgress)
+    private void ConvertSingleChd(Game game)
     {
         _logger.Debug($"Converting game {game.Title} to CHD");
-        if (_cancelled) return;
+        if (_worker.CancellationPending) return;
         if (_configuration.ChdProcessing == ChdProcessing.DontGenerate) return;
         var chdFile = Functions.GetChdName(game, _configuration);
         _logger.Debug($"CHD file: {chdFile}");
@@ -97,73 +131,72 @@ public partial class ProgressWindow : Window
             EnableRaisingEvents = true
         };
 
-        if (_cancelled) return;
+        if (_worker.CancellationPending) return;
         _logger.Debug("Starting conversion task");
-        await Task.Run(async () =>
+
+        _logger.Debug($"Executing chdman, cmd line: {chdmanConvert.StartInfo.Arguments}");
+        chdmanConvert.Start();
+
+        while (!chdmanConvert.StandardError.EndOfStream)
         {
-            _logger.Debug($"Executing chdman, cmd line: {chdmanConvert.StartInfo.Arguments}");
-            chdmanConvert.Start();
-
-            while (!chdmanConvert.StandardError.EndOfStream)
+            if (_worker.CancellationPending)
             {
-                if (_cancelled)
-                {
-                    _logger.Debug("Process canceled, killing chdman");
-                    if (!chdmanConvert.HasExited) chdmanConvert.Kill();
-                    await chdmanConvert.WaitForExitAsync();
-                    File.Delete(chdPath);
-                    return;
-                }
-
-                var line = await chdmanConvert.StandardError.ReadLineAsync() ?? string.Empty;
-                if (line.Contains(Constants.ChdManComplete))
-                {
-                    reportProgress(100.0);
-                    break;
-                }
-
-                if (line.Contains("Error"))
-                {
-                    _logger.Debug($"chdman error: {line}");
-                    reportProgress(100.0);
-                    throw new ProcessingException(line);
-                }
-
-                var matches = Constants.ChdManProgressRegex().Matches(line);
-                var progress = double.Parse(matches[0].Groups[1].Value, CultureInfo.InvariantCulture);
-                reportProgress(progress);
-                _logger.Debug("chdman conversion finished");
+                _logger.Debug("Process canceled, killing chdman");
+                if (!chdmanConvert.HasExited) chdmanConvert.Kill();
+                chdmanConvert.WaitForExit();
+                File.Delete(chdPath);
+                return;
             }
 
-            await chdmanConvert.WaitForExitAsync();
-
-            if (chdmanConvert.ExitCode != 0)
+            var line = chdmanConvert.StandardError.ReadLine() ?? string.Empty;
+            if (line.Contains(Constants.ChdManComplete))
             {
-                _logger.Debug($"chdman conversion finished with error: {chdmanConvert.ExitCode}");
-                if (_cancelled) return;
-                var output = new List<string>();
-                while (!chdmanConvert.StandardOutput.EndOfStream)
-                {
-                    if (_cancelled) return;
-                    var line = await chdmanConvert.StandardOutput.ReadLineAsync() ?? string.Empty;
-                    output.Add(line);
-                }
-
-                throw new ProcessingException(string.Join(Environment.NewLine, output));
+                _worker.ReportProgress(100);
+                break;
             }
 
-            game.ChdCreated = true;
+            if (line.Contains("Error"))
+            {
+                _logger.Debug($"chdman error: {line}");
+                _worker.ReportProgress(100);
+                throw new ProcessingException(line);
+            }
 
-            chdmanConvert.Dispose();
-        });
+            var matches = Constants.ChdManProgressRegex().Matches(line);
+            var progress = double.Parse(matches[0].Groups[1].Value, CultureInfo.InvariantCulture);
+            _worker.ReportProgress((int)Math.Round(progress));
+            _logger.Debug("chdman conversion finished");
+        }
+
+        chdmanConvert.WaitForExit();
+
+        if (chdmanConvert.ExitCode != 0)
+        {
+            _logger.Debug($"chdman conversion finished with error: {chdmanConvert.ExitCode}");
+            if (_worker.CancellationPending) return;
+            var output = new List<string>();
+            while (!chdmanConvert.StandardOutput.EndOfStream)
+            {
+                if (_worker.CancellationPending) return;
+                var line = chdmanConvert.StandardOutput.ReadLine() ?? string.Empty;
+                output.Add(line);
+            }
+
+            throw new ProcessingException(string.Join(Environment.NewLine, output));
+        }
+
+        game.ChdCreated = true;
+
+        chdmanConvert.Dispose();
+
         _logger.Debug("Finished conversion");
     }
 
-    private async Task CalculateTracksMd5(Game game, Action<double> reportProgress)
+    private void CalculateTracksMd5(Game game)
     {
         _logger.Debug("Calculating tracks md5");
-        reportProgress(0.0);
-        if (_cancelled) return;
+        _worker.ReportProgress(0);
+        if (_worker.CancellationPending) return;
         var readmePath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), Constants.ReadmeFile);
         _logger.Debug($"Readme path: {readmePath}");
         if (File.Exists(readmePath) && !_configuration.OverwriteExistingReadmes) return;
@@ -182,30 +215,53 @@ public partial class ProgressWindow : Window
             select Path.Combine(Path.GetDirectoryName(cuefile)!, bin));
         _logger.Debug($"Bin files from cue: {string.Join(',', bins)}");
 
-        if (_cancelled) return;
-        var md5 = MD5.Create();
+        if (_worker.CancellationPending) return;
         if (game.ChdData.TrackInfo.Count != 0) game.ChdData.TrackInfo.Clear();
         for (var i = 0; i < bins.Count; i++)
         {
-            if (_cancelled) return;
+            if (_worker.CancellationPending) return;
             var bin = bins[i];
-            _logger.Debug($"Calculating md5 for track {i+1}: {bin}");
-            await using var fs = File.OpenRead(bin);
-            var hashArray = await md5.ComputeHashAsync(fs);
-            var hash = string.Join(string.Empty, hashArray.Select(b => b.ToHexString(2)));
+            _logger.Debug($"Calculating md5 for track {i + 1}: {bin}");
+            using var fs = File.OpenRead(bin);
+            var hash = CalculateMd5HashFromStream(fs);
             game.ChdData.TrackInfo.Add((i + 1, hash));
-            reportProgress((double)i / bins.Count * 100.0);
+            _worker.ReportProgress((int)Math.Round((double)i / bins.Count * 100.0),
+                new ProgressUpdateObject { Step = 2, BinNo = i + 1, BinCount = bins.Count });
             _logger.Debug("Done");
         }
 
-        reportProgress(100.0);
+        _worker.ReportProgress(100);
         _logger.Debug("Calculating tracks md5 finished");
+    }
+
+    private string CalculateMd5HashFromStream(Stream inputStream)
+    {
+        var md5 = new MD5Digest();
+        var buffer = new byte[4096]; // Use a buffer for efficient reading
+
+        int bytesRead;
+        while ((bytesRead = inputStream.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            md5.BlockUpdate(buffer, 0, bytesRead);
+            _worker.ReportProgress((int)Math.Round((double)inputStream.Position / inputStream.Length * 100.0));
+        }
+
+        var hashBytes = new byte[md5.GetDigestSize()];
+        md5.DoFinal(hashBytes, 0);
+
+        var sb = new StringBuilder();
+        foreach (var t in hashBytes)
+        {
+            sb.Append(t.ToString("x2"));
+        }
+
+        return sb.ToString();
     }
 
     private void GetChdManInfo(Game game)
     {
         _logger.Debug($"Getting chdman info for {game.Title}");
-        if (_cancelled) return;
+        if (_worker.CancellationPending) return;
         var chdFile = Functions.GetChdName(game, _configuration);
         var chdPath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), chdFile);
         Functions.LoadChdManInfo(chdPath, game);
@@ -214,7 +270,7 @@ public partial class ProgressWindow : Window
     private void GenerateReadme(Game game)
     {
         _logger.Debug($"Generating readme for {game.Title}");
-        if (_cancelled) return;
+        if (_worker.CancellationPending) return;
         var readmePath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), Constants.ReadmeFile);
         _logger.Debug($"Readme path: {readmePath}");
         if (File.Exists(readmePath) && !_configuration.OverwriteExistingReadmes) return;
@@ -236,13 +292,13 @@ public partial class ProgressWindow : Window
     private void CancelButton_OnClick(object? sender, RoutedEventArgs e)
     {
         _logger.Debug("Cancel button clicked");
-        _cancelled = true;
+        _worker.CancelAsync();
     }
 
     private void Window_OnClosing(object? sender, WindowClosingEventArgs e)
     {
         _logger.Debug("Window is closing");
-        _cancelled = true;
+        _worker.CancelAsync();
         if (!e.IsProgrammatic) e.Cancel = true;
     }
 }

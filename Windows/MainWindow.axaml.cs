@@ -163,9 +163,11 @@ public partial class MainWindow : Window
             .ToList() ?? [];
         var progress = new AddFolderProgressWindow();
         _ = progress.ShowDialog(this);
-        progress.Process(dirs, GameList, Configuration).GetAwaiter().GetResult();
-        progress.Close();
-        DataGridGameList.CollectionView.Refresh();
+        progress.Process(dirs, GameList, Configuration, () =>
+        {
+            progress.Close();
+            DataGridGameList.CollectionView.Refresh();    
+        });
     }
 
     private void DeleteButton_OnClick(object? sender, RoutedEventArgs e)
@@ -235,19 +237,20 @@ public partial class MainWindow : Window
         _ = progress.ShowDialog(this);
         try
         {
-            progress.Process(GameList.ToList(), Configuration).GetAwaiter().GetResult();
-            MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished",
-                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Success, WindowStartupLocation.CenterOwner)
-                .ShowWindowDialogAsync(progress).GetAwaiter().GetResult();
+            progress.Process(GameList.ToList(), Configuration, () =>
+            {
+                progress.Close();
+                MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished",
+                        ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Success, WindowStartupLocation.CenterOwner)
+                    .ShowWindowDialogAsync(this);
+                DataGridGameList.CollectionView.Refresh();
+            });
         }
         catch (Exception ex)
         {
             MessageBoxManager.GetMessageBoxStandard(progress.Title ?? "Error", ex.Message, ButtonEnum.Ok,
                 MsBox.Avalonia.Enums.Icon.Error).ShowWindowDialogAsync(this).GetAwaiter().GetResult();
         }
-
-        progress.Close();
-        DataGridGameList.CollectionView.Refresh();
     }
 
     private void AddReadmes(string directory)

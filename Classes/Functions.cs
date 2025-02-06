@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using AssM.Data;
 using Avalonia.Threading;
 using DiscTools;
@@ -139,6 +138,7 @@ public static class Functions
             Logger.Error($"Failed to load description from {readmePath}");
             return;
         }
+
         var description = string.Join(Environment.NewLine, lines.Skip(index + 1)).Trim();
         game.Description = description;
     }
@@ -154,6 +154,7 @@ public static class Functions
             Logger.Error($"Failed to load game id from {readmePath}");
             return;
         }
+
         var id = string.Join("", lines.Skip(index + 1).Take(3)).Trim();
         if (!string.IsNullOrEmpty(id)) game.Id = id;
         game.ReadmeCreated = true;
@@ -171,6 +172,7 @@ public static class Functions
             Logger.Error($"Failed to load track info from {readmePath}");
             return;
         }
+
         var endIndex = Array.FindIndex(lines, line => line.Contains("**Description:**")) - 1;
         var hashes = lines.Skip(startIndex).Take(endIndex - startIndex).Where(item => item.StartsWith("BIN"));
         foreach (var hashLine in hashes)
@@ -241,7 +243,7 @@ public static class Functions
         return game;
     }
 
-    public static async Task ProcessJson(Configuration configuration, Game game, Action<double> reportProgress)
+    public static void ProcessJson(Configuration configuration, Game game, Action<double> reportProgress)
     {
         Logger.Debug("Processing json");
         try
@@ -251,16 +253,14 @@ public static class Functions
                 Logger.Debug("...or not");
                 return;
             }
+
             var lib = Assembly.LoadFrom("JAssOn.dll");
             Logger.Debug($"version: {lib.GetName().Version?.ToString(3)}");
             var cls = lib.GetType("JAssOn.Ldrr");
             if (cls == null) return;
             dynamic? inst = Activator.CreateInstance(cls);
             if (inst == null) return;
-            await Task.Run(() =>
-            {
-                inst.ProcessJson(configuration.OutputDirectory, game.Id, game.Title, reportProgress); 
-            });
+            inst.ProcessJson(configuration.OutputDirectory, game.Id, game.Title, reportProgress);
         }
         catch (Exception e)
         {

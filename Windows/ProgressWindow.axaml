@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="250"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="250" Width="500"
         x:Class="AssM.Windows.ProgressWindow"
         Closing="Window_OnClosing"
         Title="Progress" SizeToContent="Height" ShowInTaskbar="False" CanResize="False"
