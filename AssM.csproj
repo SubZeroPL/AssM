@@ -5,11 +5,11 @@
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Version>1.5.1</Version>
+        <Version>1.6.0</Version>
         <Authors>SubZeroPL</Authors>
         <PackageProjectUrl>https://github.com/SubZeroPL/AssM/</PackageProjectUrl>
-        <AssemblyVersion>1.5.1</AssemblyVersion>
-        <FileVersion>1.5.1</FileVersion>
+        <AssemblyVersion>1.6.0</AssemblyVersion>
+        <FileVersion>1.6.0</FileVersion>
         <Title>AssM</Title>
     </PropertyGroup>
 
@@ -21,9 +21,10 @@
         <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.3" />
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
         <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.2.3" />
+        <PackageReference Include="BouncyCastle.Cryptography" Version="2.5.0" />
         <PackageReference Include="Markdown.Avalonia" Version="11.0.3-a1"/>
         <PackageReference Include="MessageBox.Avalonia" Version="3.2.0" />
-        <PackageReference Include="NLog" Version="5.3.4" />
+        <PackageReference Include="NLog" Version="5.4.0" />
     </ItemGroup>
 
     <ItemGroup>
