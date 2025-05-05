@@ -5,11 +5,11 @@
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Version>1.6.0</Version>
+        <Version>1.6.1</Version>
         <Authors>SubZeroPL</Authors>
         <PackageProjectUrl>https://github.com/SubZeroPL/AssM/</PackageProjectUrl>
-        <AssemblyVersion>1.6.0</AssemblyVersion>
-        <FileVersion>1.6.0</FileVersion>
+        <AssemblyVersion>1.6.1</AssemblyVersion>
+        <FileVersion>1.6.1</FileVersion>
         <Title>AssM</Title>
     </PropertyGroup>
 
