@@ -134,6 +134,15 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrWhiteSpace(cuePath)) return;
         var game = Functions.AddGameToList(cuePath, Configuration, GameList);
+        if (game == null)
+        {
+            MessageBoxManager.GetMessageBoxStandard("Error",
+                    $"Failed to add game to list from {cuePath}{Environment.NewLine}Id not present in image",
+                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner)
+                .ShowWindowDialogAsync(this);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text)) return;
         Functions.LoadExistingData(game, Configuration);
         game.Modified = true;
@@ -163,10 +172,17 @@ public partial class MainWindow : Window
             .ToList() ?? [];
         var progress = new AddFolderProgressWindow();
         _ = progress.ShowDialog(this);
-        progress.Process(dirs, GameList, Configuration, () =>
+        progress.Process(dirs, GameList, Configuration, (errors) =>
         {
             progress.Close();
-            DataGridGameList.CollectionView.Refresh();    
+            DataGridGameList.CollectionView.Refresh();
+            if (errors.Count > 0)
+            {
+                MessageBoxManager.GetMessageBoxStandard("Error",
+                        string.Join(Environment.NewLine, errors),
+                        ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner)
+                    .ShowWindowDialogAsync(this);
+            }
         });
     }
 

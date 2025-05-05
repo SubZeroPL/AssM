@@ -28,9 +28,10 @@ public partial class AddFolderProgressWindow : Window
             LabelFolderName.Content = dir;
     }
 
-    public void Process(List<string> dirs, ObservableCollection<Game> gameList, Configuration configuration, Action finishedCallback)
+    public void Process(List<string> dirs, ObservableCollection<Game> gameList, Configuration configuration, Action<List<string>> finishedCallback)
     {
         var cueFiles = new List<string>();
+        var errors = new List<string>();
         _worker.DoWork += (_, _) =>
         {
             foreach (var dir in dirs)
@@ -43,7 +44,11 @@ public partial class AddFolderProgressWindow : Window
             foreach (var cueFile in cueFiles)
             {
                 if (_worker.CancellationPending) return;
-                Functions.AddGameToList(cueFile, configuration, gameList);
+                var game = Functions.AddGameToList(cueFile, configuration, gameList);
+                if (game == null)
+                {
+                    errors.Add($"Failed to add game to list from {cueFile}{Environment.NewLine}Id not present in image");
+                }
             }
 
             if (string.IsNullOrWhiteSpace(configuration.OutputDirectory)) return;
@@ -54,7 +59,7 @@ public partial class AddFolderProgressWindow : Window
             }
         };
         
-        _worker.RunWorkerCompleted += (_, _) => finishedCallback.Invoke();
+        _worker.RunWorkerCompleted += (_, _) => finishedCallback.Invoke(errors);
         
         _worker.RunWorkerAsync();
     }
