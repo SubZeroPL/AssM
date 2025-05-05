@@ -216,10 +216,16 @@ public static class Functions
         return result;
     }
 
-    public static Game AddGameToList(string cuePath, Configuration configuration, ObservableCollection<Game> gameList)
+    public static Game? AddGameToList(string cuePath, Configuration configuration, ObservableCollection<Game> gameList)
     {
         Logger.Debug($"Adding game to list from {cuePath}");
         var di = DiscInspector.ScanDisc(cuePath);
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract - apparently there are games that have no Id in image (like SLPS-00018)
+        if (di.Data.SerialNumber == null)
+        {
+            Logger.Error($"Failed to add game to list from {cuePath}{Environment.NewLine}Id not present in image");
+            return null;
+        }
         var title = configuration.GetTitleFromCue ? Path.GetFileNameWithoutExtension(cuePath) : di.Data.GameTitle;
         var game = new Game
         {
