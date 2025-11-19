@@ -19,7 +19,7 @@ public static class Functions
 
     public static string GetChdName(Game game, Configuration configuration) => configuration.GameIdAsChdName
         ? $"{game.Id.ToUpper()}.chd"
-        : Path.GetFileName(Path.ChangeExtension(game.CuePath, "chd"));
+        : Path.GetFileName(Path.ChangeExtension(game.ImagePath, "chd"));
 
     public static void LoadChdManInfo(string chdPath, Game game)
     {
@@ -174,7 +174,7 @@ public static class Functions
         }
 
         var endIndex = Array.FindIndex(lines, line => line.Contains("**Description:**")) - 1;
-        var hashes = lines.Skip(startIndex).Take(endIndex - startIndex).Where(item => item.StartsWith("BIN"));
+        var hashes = lines.Skip(startIndex).Take(endIndex - startIndex).Where(item => item.StartsWith("TRACK"));
         foreach (var hashLine in hashes)
         {
             var matches = Constants.BinHashRegex().Matches(hashLine);
@@ -199,11 +199,12 @@ public static class Functions
         }
     }
 
-    public static List<string> GetCueFilesInDirectory(string directory)
+    public static List<string> GetCueIsoFilesInDirectory(string directory)
     {
-        Logger.Debug($"Getting cue files from {directory}");
-        var result = Directory.GetFiles(directory).Where(d => Path.GetExtension(d) == ".cue").ToList();
-        Directory.GetDirectories(directory).ToList().ForEach(d => result.AddRange(GetCueFilesInDirectory(d)));
+        Logger.Debug($"Getting cue/iso files from {directory}");
+        var result = Directory.GetFiles(directory)
+            .Where(d => Path.GetExtension(d) == ".cue" || Path.GetExtension(d) == ".iso").ToList();
+        Directory.GetDirectories(directory).ToList().ForEach(d => result.AddRange(GetCueIsoFilesInDirectory(d)));
         return result;
     }
 
@@ -216,21 +217,22 @@ public static class Functions
         return result;
     }
 
-    public static Game? AddGameToList(string cuePath, Configuration configuration, ObservableCollection<Game> gameList)
+    public static Game? AddGameToList(string imagePath, Configuration configuration, ObservableCollection<Game> gameList)
     {
-        Logger.Debug($"Adding game to list from {cuePath}");
-        var di = DiscInspector.ScanDisc(cuePath);
+        Logger.Debug($"Adding game to list from {imagePath}");
+        var di = DiscInspector.ScanDisc(imagePath);
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract - apparently there are games that have no Id in image (like SLPS-00018)
         if (di.Data.SerialNumber == null)
         {
-            Logger.Error($"Failed to add game to list from {cuePath}{Environment.NewLine}Id not present in image");
+            Logger.Error($"Failed to add game to list from {imagePath}{Environment.NewLine}Id not present in image");
             return null;
         }
-        var title = configuration.GetTitleFromCue ? Path.GetFileNameWithoutExtension(cuePath) : di.Data.GameTitle;
+
+        var title = configuration.GetTitleFromCue ? Path.GetFileNameWithoutExtension(imagePath) : di.Data.GameTitle;
         var game = new Game
         {
             Title = title, Id = di.Data.SerialNumber, Platform = di.DetectedDiscType,
-            CuePath = cuePath
+            ImagePath = imagePath
         };
         var existingGame = gameList.FirstOrDefault(g => g.Id == game.Id);
         if (existingGame != null)
@@ -238,7 +240,7 @@ public static class Functions
             Logger.Debug($"Game already exists: {existingGame.Title}, updating");
             existingGame.Title = game.Title;
             existingGame.Platform = game.Platform;
-            existingGame.CuePath = game.CuePath;
+            existingGame.ImagePath = game.ImagePath;
             existingGame.Id = game.Id;
         }
         else
@@ -273,4 +275,6 @@ public static class Functions
             Logger.Debug($"Json processing cancelled: {e}");
         }
     }
+
+    public static bool IsIso(Game game) => game.ImagePath.EndsWith(".iso", StringComparison.OrdinalIgnoreCase);
 }

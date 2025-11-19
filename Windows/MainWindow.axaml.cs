@@ -20,6 +20,8 @@ using Avalonia.Threading;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using NLog;
+using Octokit;
+using ProductHeaderValue = Octokit.ProductHeaderValue;
 
 namespace AssM.Windows;
 
@@ -86,30 +88,15 @@ public partial class MainWindow : Window
     {
         _logger.Debug("Checking for new version");
         var currentVer = GetVersion();
-        var client = new HttpClient();
-        var request = new HttpRequestMessage
-        {
-            RequestUri = new Uri(Constants.LatestReleaseLink),
-            Method = HttpMethod.Get,
-            Headers =
-            {
-                Accept = { new MediaTypeWithQualityHeaderValue("application/vnd.github+json") }
-            }
-        };
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue(Assembly.GetExecutingAssembly().GetName().Name!,
-            Assembly.GetExecutingAssembly().GetName().Version!.ToString()));
-        var response = await client.SendAsync(request);
-        if (response.StatusCode != HttpStatusCode.OK) return;
-        var json = await response.Content.ReadAsStringAsync();
-        var jsonDoc = JsonDocument.Parse(json);
-        if (!jsonDoc.RootElement.TryGetProperty("tag_name", out var tagName)) return;
-        var tag = tagName.GetString()?.Replace("v", string.Empty);
+        var ghClient = new GitHubClient(new ProductHeaderValue(Assembly.GetEntryAssembly()?.GetName().Name));
+        var latestRelease = await ghClient.Repository.Release.GetLatest("SubZeroPL", "AssM");
+        var tag = latestRelease.TagName.Replace("v", string.Empty);
         var versionPresent = Version.TryParse(tag, out var version);
         if (!versionPresent || version <= currentVer) return;
         _logger.Debug($"New version detected: {tag}");
         TextBlockUpdate.Text = $"New version: {version!.Major}.{version.Minor}.{version.Build}";
         ButtonUpdate.IsVisible = true;
-        ButtonUpdate.Tag = jsonDoc.RootElement.GetProperty("html_url").GetString();
+        ButtonUpdate.Tag = latestRelease.Url;
     }
 
     private void AddButton_OnClick(object? sender, RoutedEventArgs e)
@@ -118,7 +105,9 @@ public partial class MainWindow : Window
         {
             AllowMultiple = true,
             Title = "Select images",
-            FileTypeFilter = [new FilePickerFileType("CUE file") { Patterns = ["*.cue"] }]
+            FileTypeFilter = [ new FilePickerFileType("All supported formats (*.cue, *.iso)") { Patterns = ["*.cue", "*.iso"] },
+                new FilePickerFileType("CUE file (*.cue)") { Patterns = ["*.cue"] },
+                new FilePickerFileType("ISO file (*.iso)") { Patterns = ["*.iso"] }]
         };
         var files = GetTopLevel(this)?.StorageProvider.OpenFilePickerAsync(fpo).GetAwaiter().GetResult() ??
                     new List<IStorageFile>();
@@ -130,14 +119,14 @@ public partial class MainWindow : Window
         DataGridGameList.CollectionView.Refresh();
     }
 
-    private void AddGame(string cuePath)
+    private void AddGame(string imagePath)
     {
-        if (string.IsNullOrWhiteSpace(cuePath)) return;
-        var game = Functions.AddGameToList(cuePath, Configuration, GameList);
+        if (string.IsNullOrWhiteSpace(imagePath)) return;
+        var game = Functions.AddGameToList(imagePath, Configuration, GameList);
         if (game == null)
         {
             MessageBoxManager.GetMessageBoxStandard("Error",
-                    $"Failed to add game to list from {cuePath}{Environment.NewLine}Id not present in image",
+                    $"Failed to add game to list from {imagePath}{Environment.NewLine}Id not present in image",
                     ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner)
                 .ShowWindowDialogAsync(this);
             return;
@@ -172,7 +161,7 @@ public partial class MainWindow : Window
             .ToList() ?? [];
         var progress = new AddFolderProgressWindow();
         _ = progress.ShowDialog(this);
-        progress.Process(dirs, GameList, Configuration, (errors) =>
+        progress.Process(dirs, GameList, Configuration, errors =>
         {
             progress.Close();
             DataGridGameList.CollectionView.Refresh();

@@ -39,7 +39,7 @@
                                 </MenuItem>
                                 <CheckBox Name="CheckBoxProcessModified" IsThreeState="False" Click="CheckBox_OnClick">Process only modified enties</CheckBox>
                                 <CheckBox Name="CheckBoxOverwriteReadme" IsThreeState="False" Click="CheckBox_OnClick">Overwrite existing READMEs</CheckBox>
-                                <CheckBox Name="CheckBoxGetTitleFromCue" IsThreeState="False" Click="CheckBox_OnClick">Get game title from CUE file name</CheckBox>
+                                <CheckBox Name="CheckBoxGetTitleFromCue" IsThreeState="False" Click="CheckBox_OnClick">Get game title from file name</CheckBox>
                                 <CheckBox Name="CheckBoxGameIdAsChdName" IsThreeState="False" Click="CheckBox_OnClick">Use Game ID as name for CHD file</CheckBox>
                             </MenuFlyout>
                         </Button.Flyout>

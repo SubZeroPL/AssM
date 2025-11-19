@@ -29,7 +29,7 @@ public static partial class Constants
     [GeneratedRegex(BinFile)]
     public static partial Regex BinFileRegex();
 
-    private const string BinHash = @"BIN \(TRACK (\d{2})\) MD5\: (.+)";
+    private const string BinHash = @"TRACK (\d{2}) MD5\: (.+)";
     [GeneratedRegex(BinHash)]
     public static partial Regex BinHashRegex();
     public const string ReadmeGameTitle = "#gameTitle#";
@@ -52,5 +52,13 @@ public static partial class Constants
         "Getting CHD info",
         "Generating README",
         "Process JSON"
+    ];
+    
+    public static readonly string[] AddFolderSteps =
+    [
+        "",
+        "Aggregating image files (folder {0} of {1})",
+        "Adding to the list",
+        "Loading existing data"
     ];
 }

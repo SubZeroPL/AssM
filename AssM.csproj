@@ -5,12 +5,15 @@
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <Version>1.6.1</Version>
+        <Version>1.7.0</Version>
         <Authors>SubZeroPL</Authors>
-        <PackageProjectUrl>https://github.com/SubZeroPL/AssM/</PackageProjectUrl>
-        <AssemblyVersion>1.6.1</AssemblyVersion>
-        <FileVersion>1.6.1</FileVersion>
+        <PackageProjectUrl>https://github.com/SubZeroPL/AssM</PackageProjectUrl>
+        <AssemblyVersion>1.7.0</AssemblyVersion>
+        <FileVersion>1.7.0</FileVersion>
         <Title>AssM</Title>
+        <PackageLicenseUrl>https://github.com/SubZeroPL/AssM/blob/master/LICENSE</PackageLicenseUrl>
+        <RepositoryUrl>https://github.com/SubZeroPL/AssM/</RepositoryUrl>
+        <ApplicationIcon>Assets\assm.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -25,6 +28,7 @@
         <PackageReference Include="Markdown.Avalonia" Version="11.0.3-a1"/>
         <PackageReference Include="MessageBox.Avalonia" Version="3.2.0" />
         <PackageReference Include="NLog" Version="5.4.0" />
+        <PackageReference Include="Octokit" Version="14.0.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -40,6 +44,7 @@
 
     <ItemGroup>
         <AvaloniaResource Include="Assets\**"/>
+        <AvaloniaResource Remove="Updater\**" />
     </ItemGroup>
 
     <ItemGroup>
@@ -53,25 +58,30 @@
         </Compile>
         <Compile Remove="Avalonia.Labs\**"/>
         <Compile Remove="DiscTools\**"/>
+        <Compile Remove="Updater\**" />
     </ItemGroup>
 
     <ItemGroup>
         <AvaloniaXaml Remove="Avalonia.Labs\**"/>
         <AvaloniaXaml Remove="DiscTools\**"/>
+        <AvaloniaXaml Remove="Updater\**" />
     </ItemGroup>
 
     <ItemGroup>
         <EmbeddedResource Remove="Avalonia.Labs\**"/>
         <EmbeddedResource Remove="DiscTools\**"/>
+        <EmbeddedResource Remove="Updater\**" />
     </ItemGroup>
 
     <ItemGroup>
         <AdditionalFiles Remove="Avalonia.Labs\**"/>
         <AdditionalFiles Remove="DiscTools\**"/>
+        <AdditionalFiles Remove="Updater\**" />
     </ItemGroup>
 
     <ItemGroup>
         <None Remove="Avalonia.Labs\**"/>
         <None Remove="DiscTools\**"/>
+        <None Remove="Updater\**" />
     </ItemGroup>
 </Project>
