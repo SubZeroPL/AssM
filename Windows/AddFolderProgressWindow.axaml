@@ -3,16 +3,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:gif="clr-namespace:Avalonia.Labs.Gif;assembly=Avalonia.Labs.Gif"
-        mc:Ignorable="d" d:DesignWidth="300"
+        mc:Ignorable="d" d:DesignWidth="400"
         x:Class="AssM.Windows.AddFolderProgressWindow"
         Closing="Window_OnClosing"
-        Width="300" WindowStartupLocation="CenterOwner" SizeToContent="Height" ShowInTaskbar="False" CanResize="False"
+        Width="400" WindowStartupLocation="CenterOwner" SizeToContent="Height" ShowInTaskbar="False" CanResize="False"
         Title="Adding folder contents">
     <StackPanel>
         <StackPanel Orientation="Horizontal">
-            <Label>Processing folder:</Label>
-            <Label Name="LabelFolderName"></Label>
+            <Label Name="LabelStep">Processing folder (0 of 0):</Label>
         </StackPanel>
+        <Label Name="LabelFolderName">folder name</Label>
         <Panel HorizontalAlignment="Center">
             <gif:GifImage Source="avares://AssM/Assets/loading.gif" />
         </Panel>

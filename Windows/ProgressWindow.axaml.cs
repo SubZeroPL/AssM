@@ -52,7 +52,8 @@ public partial class ProgressWindow : Window
         {
             for (var i = 0; i < gameList.Count; i++)
             {
-                _worker.ReportProgress(0);
+                var progress = i / gameList.Count * 100;
+                _worker.ReportProgress(progress);
                 if (_worker.CancellationPending)
                     break;
                 var game = gameList.ElementAt(i);
@@ -64,17 +65,18 @@ public partial class ProgressWindow : Window
                 }
 
                 var step = 1;
-                _worker.ReportProgress(0,
+                _worker.ReportProgress(progress,
                     new ProgressUpdateObject
-                        { Title = game.Title, Count = gameList.Count, Step = step, Index = i + 1 });
+                        { Title = game.Title, Count = gameList.Count, Step = step++, Index = i + 1 });
                 ConvertSingleChd(game);
-                _worker.ReportProgress(0, new ProgressUpdateObject { Step = step++ });
+                _worker.ReportProgress(progress,
+                    new ProgressUpdateObject { Step = step++, BinNo = 1, BinCount = game.ChdData.TrackInfo.Count });
                 CalculateTracksMd5(game);
-                _worker.ReportProgress(0, new ProgressUpdateObject { Step = step++ });
+                _worker.ReportProgress(progress, new ProgressUpdateObject { Step = step++ });
                 GetChdManInfo(game);
-                _worker.ReportProgress(0, new ProgressUpdateObject { Step = step++ });
+                _worker.ReportProgress(progress, new ProgressUpdateObject { Step = step++ });
                 GenerateReadme(game);
-                _worker.ReportProgress(0, new ProgressUpdateObject { Step = step });
+                _worker.ReportProgress(progress, new ProgressUpdateObject { Step = step });
                 Functions.ProcessJson(_configuration, game, d => { _worker.ReportProgress((int)d); });
                 game.Modified = false;
                 _logger.Debug($"Finished processing game {i + 1}: {game.Title}");
@@ -114,7 +116,7 @@ public partial class ProgressWindow : Window
         var chdPath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), chdFile);
         _logger.Debug($"CHD path: {chdPath}");
         if (File.Exists(chdPath) && _configuration.ChdProcessing != ChdProcessing.GenerateAll) return;
-        if (string.IsNullOrWhiteSpace(game.CuePath)) return;
+        if (string.IsNullOrWhiteSpace(game.ImagePath)) return;
         Directory.CreateDirectory(Path.GetDirectoryName(chdPath) ?? string.Empty);
 
         var chdmanConvert = new Process
@@ -122,7 +124,7 @@ public partial class ProgressWindow : Window
             StartInfo = new ProcessStartInfo
             {
                 FileName = Constants.ChdMan,
-                Arguments = string.Format(Constants.ChdManConvert, game.CuePath, chdPath),
+                Arguments = string.Format(Constants.ChdManConvert, game.ImagePath, chdPath),
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -200,20 +202,30 @@ public partial class ProgressWindow : Window
         var readmePath = Path.Combine(_configuration.OutputDirectory, Functions.OutputPath(game), Constants.ReadmeFile);
         _logger.Debug($"Readme path: {readmePath}");
         if (File.Exists(readmePath) && !_configuration.OverwriteExistingReadmes) return;
-        var cuefile = game.CuePath;
-        _logger.Debug($"Cue path: {cuefile}");
-        if (string.IsNullOrWhiteSpace(cuefile)) return;
-        _logger.Debug("Adding bin files from cue");
-        var lines = File.ReadLines(cuefile);
+        var imagefile = game.ImagePath;
         List<string> bins = [];
-        bins.AddRange(from line in lines
-            where line.StartsWith("FILE")
-            select Constants.BinFileRegex().Matches(line)
-            into matches
-            select matches[0].Groups[1].Value
-            into bin
-            select Path.Combine(Path.GetDirectoryName(cuefile)!, bin));
-        _logger.Debug($"Bin files from cue: {string.Join(',', bins)}");
+        if (Functions.IsIso(game))
+        {
+            _logger.Debug($"Iso path: {imagefile}");
+            if (string.IsNullOrWhiteSpace(imagefile)) return;
+            bins.Add(imagefile);
+            _logger.Debug($"Iso file: {string.Join(',', bins)}");
+        }
+        else
+        {
+            _logger.Debug($"Cue path: {imagefile}");
+            if (string.IsNullOrWhiteSpace(imagefile)) return;
+            _logger.Debug("Adding bin files from cue");
+            var lines = File.ReadLines(imagefile);
+            bins.AddRange(from line in lines
+                where line.StartsWith("FILE")
+                select Constants.BinFileRegex().Matches(line)
+                into matches
+                select matches[0].Groups[1].Value
+                into bin
+                select Path.Combine(Path.GetDirectoryName(imagefile)!, bin));
+            _logger.Debug($"Bin files from cue: {string.Join(',', bins)}");
+        }
 
         if (_worker.CancellationPending) return;
         if (game.ChdData.TrackInfo.Count != 0) game.ChdData.TrackInfo.Clear();
@@ -225,7 +237,7 @@ public partial class ProgressWindow : Window
             using var fs = File.OpenRead(bin);
             var hash = CalculateMd5HashFromStream(fs);
             game.ChdData.TrackInfo.Add((i + 1, hash));
-            _worker.ReportProgress((int)Math.Round((double)i / bins.Count * 100.0),
+            _worker.ReportProgress(i / bins.Count * 100,
                 new ProgressUpdateObject { Step = 2, BinNo = i + 1, BinCount = bins.Count });
             _logger.Debug("Done");
         }
@@ -255,7 +267,7 @@ public partial class ProgressWindow : Window
             sb.Append(t.ToString("x2"));
         }
 
-        return sb.ToString();
+        return sb.ToString().ToUpperInvariant();
     }
 
     private void GetChdManInfo(Game game)
