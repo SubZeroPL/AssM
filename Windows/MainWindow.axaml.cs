@@ -105,9 +105,12 @@ public partial class MainWindow : Window
         {
             AllowMultiple = true,
             Title = "Select images",
-            FileTypeFilter = [ new FilePickerFileType("All supported formats (*.cue, *.iso)") { Patterns = ["*.cue", "*.iso"] },
+            FileTypeFilter =
+            [
+                new FilePickerFileType("All supported formats (*.cue, *.iso)") { Patterns = ["*.cue", "*.iso"] },
                 new FilePickerFileType("CUE file (*.cue)") { Patterns = ["*.cue"] },
-                new FilePickerFileType("ISO file (*.iso)") { Patterns = ["*.iso"] }]
+                new FilePickerFileType("ISO file (*.iso)") { Patterns = ["*.iso"] }
+            ]
         };
         var files = GetTopLevel(this)?.StorageProvider.OpenFilePickerAsync(fpo).GetAwaiter().GetResult() ??
                     new List<IStorageFile>();
@@ -266,9 +269,16 @@ public partial class MainWindow : Window
         var readmeList = Functions.GetReadmeFilesInDirectory(directory);
         foreach (var readme in readmeList)
         {
-            var game = new Game();
-            Functions.LoadExistingData(game, Configuration, readme);
-            if (!GameList.Any(g => g.Id.Equals(game.Id))) GameList.Add(game);
+            try
+            {
+                var game = new Game();
+                Functions.LoadExistingData(game, Configuration, readme);
+                if (!GameList.Any(g => g.Id.Equals(game.Id))) GameList.Add(game);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, $"Failed to load readme {readme}");
+            }
         }
 
         DataGridGameList.CollectionView.Refresh();

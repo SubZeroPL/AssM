@@ -78,14 +78,18 @@ public static class Functions
         readmePath ??= Path.Combine(configuration.OutputDirectory, OutputPath(game), Constants.ReadmeFile);
         if (!File.Exists(readmePath)) game.ReadmeCreated = false;
 
+        if (!game.Modified)
+        {
+            if (!LoadTitleFromReadme(readmePath, game))
+            {
+                Logger.Error($"Failed to load title from {readmePath}");
+                throw new ProcessingException($"Failed to load title from {readmePath}. Readme file is malformed");
+            }
+        }
+        
         if (string.IsNullOrWhiteSpace(game.Description) && !game.Modified)
         {
             LoadDescriptionFromReadme(readmePath, game);
-        }
-
-        if (!game.Modified)
-        {
-            LoadTitleFromReadme(readmePath, game);
         }
 
         LoadTrackInfoFromReadme(readmePath, game);
@@ -113,17 +117,23 @@ public static class Functions
         Logger.Debug($"Loaded existing data from {readmePath} for game {game.Title}");
     }
 
-    private static void LoadTitleFromReadme(string readmePath, Game game)
+    private static bool LoadTitleFromReadme(string readmePath, Game game)
     {
         Logger.Debug($"Loading title from {readmePath}");
-        if (!File.Exists(readmePath)) return;
-        if (game.Modified) return;
+        if (!File.Exists(readmePath)) return false;
+        if (game.Modified) return false;
         var lines = File.ReadAllLines(readmePath);
         var index = Array.FindIndex(lines, line => line.Contains("**Game name:**"));
         var endIndex = Array.FindIndex(lines, line => line.Contains("**Game ID:**"));
+        if (index < 0 || endIndex < 0)
+        {
+            Logger.Error($"Failed to load title from {readmePath}. Readme file is malformed");
+            return false;
+        }
         var title = string.Join("", lines.Skip(index + 1).Take(new Range(1, endIndex - 1))).Trim();
         if (!string.IsNullOrEmpty(title)) game.Title = title;
         game.ReadmeCreated = true;
+        return true;
     }
 
     private static void LoadDescriptionFromReadme(string readmePath, Game game)
