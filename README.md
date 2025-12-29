@@ -3,9 +3,9 @@
 It is a piece of software that assists in creating entries for [Arkadyzja savestates repository](https://github.com/ActionPL/duckstation_openbios_savestates). It allows creating and editing README files for games that will have savestates uploaded to the repository. Those savestates will then be available for [Arkadyzja](https://arkadyzja.honmaru.pl/).
 
 ## ⚠️ Requirements
-For the application to work, [.NET Framework 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) is required. 
+For the application to work, [.NET Framework 10](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) is required. 
 
-Application is developed and tested on Windows 11 OS. It should also work on Linux/Mac hovewer it was not tested (extensively) on those platforms (only a bit on Linux and not at all on Mac) and currently only Win and Linux builds are released (see below).
+Application is developed and tested on Windows 11 OS. It should also work on Linux/Mac, however, it was not tested (extensively) on those platforms (only a bit on Linux and not at all on Mac), and currently only Win and Linux builds are released (see below).
 
 ## 📦 Releases
 Each release starting with 1.4.0 has four variants:
@@ -16,10 +16,10 @@ Each release starting with 1.4.0 has four variants:
 
 _**Linux releases are highly experimental, use at your own risk!**_
 
-The application has some basic new version check implemented. When it detects that new version is available, this button will be shown:\
+The application has some basic new version checks implemented. When it detects that a new version is available, this button will be shown:\
 ![New version button](.github/assets/new_ver.png "New version button")
 
-Clicking it will open default browser on the latest release page.
+Clicking it will open the default browser on the latest release page.
 
 ## 🪧 Usage
 [![Last Release](https://img.shields.io/github/v/release/SubZeroPL/AssM?logo=github&label=latest)](https://github.com/SubZeroPL/AssM/releases)
@@ -30,23 +30,22 @@ Clicking it will open default browser on the latest release page.
 ![Application main window](.github/assets/app.png "Application main window")
 First, you should select the Output directory, where the created README files will be stored. The files are created in a specific directory structure:
 `OutputPath\Platform\GameID`.\
-The output directory is saved between sessions, so when you start the application next time it will be automatically read and existing entries inserted into the table.\
+The output directory is saved between sessions, so when you start the application next time, it will be automatically read and existing entries inserted into the table.\
 **You should not modify existing directory structure if you plan to use the output directory again later!**
 The fields `Title` and `Description` can be freely edited, the changes are reflected immediately in the table.
 
-Then you can use `Add` and `Add folder` buttons to add more source `.cue` files
+Then you can use `Add` and `Add folder` buttons to add more source `.cue/.iso` files
 
 When you click `Start processing` the application will go through the list and perform required operations according to the configuration.
 
 ## ⚙️ Configuration
 ![Configuration options](.github/assets/config.png "Configuration options")
-- Get game title from CUE file name - by default, game name is extracted from cue/bin image; this option uses CUE file name instead
+- Get game title from CUE/ISO file name - by default, game name is extracted from the image; this option uses CUE/ISO file name instead
 - Use Game ID as the name for CHD file – by default, game title (as set by a previous option) is used for CHD file name; this option uses Game ID instead
 
 Other configuration options should be self-explanatory.
 
 ## 📝 TODO
-- some nice icon
 - [you tell me](https://github.com/SubZeroPL/AssM/issues)
 
 ## 🔗 Dependencies
