@@ -130,7 +130,7 @@ public partial class MainWindow : Window
         {
             MessageBoxManager.GetMessageBoxStandard("Error",
                     $"Failed to add game to list from {imagePath}{Environment.NewLine}Id not present in image",
-                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner)
+                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, null, WindowStartupLocation.CenterOwner)
                 .ShowWindowDialogAsync(this);
             return;
         }
@@ -172,7 +172,7 @@ public partial class MainWindow : Window
             {
                 MessageBoxManager.GetMessageBoxStandard("Error",
                         string.Join(Environment.NewLine, errors),
-                        ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner)
+                        ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, null, WindowStartupLocation.CenterOwner)
                     .ShowWindowDialogAsync(this);
             }
         });
@@ -228,7 +228,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(TextBoxOutputDirectory.Text))
         {
             MessageBoxManager.GetMessageBoxStandard("Error", "Please provide a valid output directory",
-                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner)
+                    ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Error, null, WindowStartupLocation.CenterOwner)
                 .ShowWindowDialogAsync(this).GetAwaiter().GetResult();
             return;
         }
@@ -236,7 +236,8 @@ public partial class MainWindow : Window
         if (GameList.ToList().Count == 0)
         {
             MessageBoxManager.GetMessageBoxStandard("Error", "Please provide at least one game", ButtonEnum.Ok,
-                    MsBox.Avalonia.Enums.Icon.Error, WindowStartupLocation.CenterOwner).ShowWindowDialogAsync(this)
+                    MsBox.Avalonia.Enums.Icon.Error, null, WindowStartupLocation.CenterOwner)
+                .ShowWindowDialogAsync(this)
                 .GetAwaiter().GetResult();
             return;
         }
@@ -249,7 +250,7 @@ public partial class MainWindow : Window
             {
                 progress.Close();
                 MessageBoxManager.GetMessageBoxStandard("Processing finished", "Processing finished",
-                        ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Success, WindowStartupLocation.CenterOwner)
+                        ButtonEnum.Ok, MsBox.Avalonia.Enums.Icon.Success, null, WindowStartupLocation.CenterOwner)
                     .ShowWindowDialogAsync(this);
                 DataGridGameList.CollectionView.Refresh();
             });
@@ -257,7 +258,9 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             MessageBoxManager.GetMessageBoxStandard(progress.Title ?? "Error", ex.Message, ButtonEnum.Ok,
-                MsBox.Avalonia.Enums.Icon.Error).ShowWindowDialogAsync(this).GetAwaiter().GetResult();
+                    MsBox.Avalonia.Enums.Icon.Error, null, WindowStartupLocation.CenterOwner)
+                .ShowWindowDialogAsync(this)
+                .GetAwaiter().GetResult();
         }
     }
 
