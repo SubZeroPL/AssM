@@ -25,6 +25,7 @@ jobs:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
       PROJECT_NAME: AssM
+      DOTNET_VERSION: 10.0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,9 +34,9 @@ jobs:
           submodules: recursive
           show-progress: false
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Get version
         id: get_version
         run: echo "version=$((Select-Xml -Path .\$( $env:PROJECT_NAME ).csproj -XPath '/Project/PropertyGroup/AssemblyVersion').Node.InnerXML)" >> $env:GITHUB_OUTPUT
@@ -43,53 +44,53 @@ jobs:
       - name: Build version (win64, no dotnet)
         run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false
       - name: Create artifact (win64, no dotnet)
-        uses: thedoctor0/zip-release@0.7.5
+        uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
           filename: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-win-x64.zip
-          directory: bin/Release/net8.0/win-x64/publish/
+          directory: bin/Release/net${{ env.DOTNET_VERSION }}/win-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
       - name: Move artifact
-        run: mv bin/Release/net8.0/win-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-win-x64.zip ./
+        run: mv bin/Release/net${{ env.DOTNET_VERSION }}/win-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-win-x64.zip ./
       - name: Clean
         run: dotnet clean
       - name: Build version (win64, with dotnet)
         run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained true
       - name: Create artifact (win64, with dotnet)
-        uses: thedoctor0/zip-release@0.7.5
+        uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
           filename: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip
-          directory: bin/Release/net8.0/win-x64/publish/
+          directory: bin/Release/net${{ env.DOTNET_VERSION }}/win-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
       - name: Move artifact
-        run: mv bin/Release/net8.0/win-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip ./
+        run: mv bin/Release/net${{ env.DOTNET_VERSION }}/win-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip ./
       - name: Clean
         run: dotnet clean
       - name: Build version (linux64, no dotnet)
         run: dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained false
       - name: Create artifact (linux64, no dotnet)
-        uses: thedoctor0/zip-release@0.7.5
+        uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
           filename: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-linux-x64.zip
-          directory: bin/Release/net8.0/linux-x64/publish/
+          directory: bin/Release/net${{ env.DOTNET_VERSION }}/linux-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
       - name: Move artifact
-        run: mv bin/Release/net8.0/linux-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-linux-x64.zip ./
+        run: mv bin/Release/net${{ env.DOTNET_VERSION }}/linux-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-linux-x64.zip ./
       - name: Clean
         run: dotnet clean
       - name: Build version (linux64, with dotnet)
         run: dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained true
       - name: Create artifact (linux64, with dotnet)
-        uses: thedoctor0/zip-release@0.7.5
+        uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
           filename: ${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip
-          directory: bin/Release/net8.0/linux-x64/publish/
+          directory: bin/Release/net${{ env.DOTNET_VERSION }}/linux-x64/publish/
           exclusions: '*.pdb Avalonia.Labs.Gif.xml'
       - name: Move artifact
-        run: mv bin/Release/net8.0/linux-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip ./
+        run: mv bin/Release/net${{ env.DOTNET_VERSION }}/linux-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-linux-x64.zip ./
       - name: Clean
         run: dotnet clean
       - name: Create tag
