@@ -83,7 +83,6 @@ public static class Functions
             if (!LoadTitleFromReadme(readmePath, game))
             {
                 Logger.Error($"Failed to load title from {readmePath}");
-                throw new ProcessingException($"Failed to load title from {readmePath}. Readme file is malformed");
             }
         }
         
