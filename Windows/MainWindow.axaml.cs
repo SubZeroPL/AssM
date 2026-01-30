@@ -448,4 +448,24 @@ public partial class MainWindow : Window
 
         e.Handled = true;
     }
+
+    private void TextDescription_OnKeyUp(object? sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox textBox ||
+            (textBox.Text?.Length != 0 && e.Key != Key.Back && e.Key != Key.Delete && e.Key != Key.Space)) return;
+        if (DataGridGameList.SelectedItem is not Game game) return;
+        game.Description = textBox.Text ?? string.Empty;
+        game.Modified = true;
+        DataGridGameList.CollectionView.Refresh();
+    }
+
+    private void TextTitle_OnKeyUp(object? sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox textBox ||
+            (textBox.Text?.Length != 0 && e.Key != Key.Back && e.Key != Key.Delete && e.Key != Key.Space)) return;
+        if (DataGridGameList.SelectedItem is not Game game) return;
+        game.Title = textBox.Text ?? string.Empty;
+        game.Modified = true;
+        DataGridGameList.CollectionView.Refresh();
+    }
 }

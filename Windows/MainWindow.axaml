@@ -76,11 +76,11 @@
             <TabItem Header="Info">
                 <StackPanel>
                     <Label Target="TextTitle" Content="Title"></Label>
-                    <TextBox Name="TextTitle" AcceptsReturn="False" Watermark="Enter game name">
+                    <TextBox Name="TextTitle" AcceptsReturn="False" Watermark="Enter game name" KeyUp="TextTitle_OnKeyUp">
                     </TextBox>
                     <Label Target="TextDescription" Content="Description"></Label>
                     <TextBox Name="TextDescription" AcceptsReturn="True" MinLines="5" TextWrapping="Wrap"
-                             Watermark="Enter game description">
+                             Watermark="Enter game description" KeyUp="TextDescription_OnKeyUp">
                     </TextBox>
                 </StackPanel>
             </TabItem>
