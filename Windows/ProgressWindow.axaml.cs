@@ -61,7 +61,7 @@ public partial class ProgressWindow : Window
                 if (_configuration.ProcessOnlyModified && !game.Modified)
                 {
                     _logger.Debug($"Skipping game {i + 1}: Not modified");
-                    return;
+                    continue;
                 }
 
                 var step = 1;
