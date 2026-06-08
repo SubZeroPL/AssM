@@ -6,6 +6,7 @@ using AssM.Classes;
 using AssM.Data;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Labs.Gif;
 
 namespace AssM.Windows;
 
@@ -21,9 +22,13 @@ public partial class AddFolderProgressWindow : Window
 {
     private readonly BackgroundWorker _worker;
 
+    private readonly GifStreamSource _gifStreamSource =
+        GifStreamSource.FromUriString("avares://AssM/Assets/loading.gif");
+
     public AddFolderProgressWindow()
     {
         InitializeComponent();
+        GifImage.Source = _gifStreamSource;
         _worker = new BackgroundWorker();
         _worker.WorkerReportsProgress = true;
         _worker.WorkerSupportsCancellation = true;
@@ -101,6 +106,7 @@ public partial class AddFolderProgressWindow : Window
     private void Window_OnClosing(object? sender, WindowClosingEventArgs e)
     {
         _worker.CancelAsync();
+        _gifStreamSource.Dispose();
         if (!e.IsProgrammatic) e.Cancel = true;
     }
 }

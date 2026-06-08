@@ -14,7 +14,7 @@
         </StackPanel>
         <Label Name="LabelFolderName">folder name</Label>
         <Panel HorizontalAlignment="Center">
-            <gif:GifImage Source="avares://AssM/Assets/loading.gif" />
+            <gif:GifImage Name="GifImage" />
         </Panel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
             <Button Click="CancelButton_OnClick">Cancel</Button>
