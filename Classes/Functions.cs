@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 using AssM.Data;
 using Avalonia.Threading;
 using DiscTools;
@@ -12,7 +14,7 @@ using NLog;
 
 namespace AssM.Classes;
 
-public static class Functions
+public static partial class Functions
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     public static string OutputPath(Game game) => Path.Combine(game.Platform.ToString(), game.Id);
@@ -229,12 +231,23 @@ public static class Functions
     public static Game? AddGameToList(string imagePath, Configuration configuration, ObservableCollection<Game> gameList)
     {
         Logger.Debug($"Adding game to list from {imagePath}");
-        var di = DiscInspector.ScanDisc(imagePath);
+        var di = DiscInspector.ScanDiscQuick(imagePath);
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract - apparently there are games that have no Id in image (like SLPS-00018)
         if (di.Data.SerialNumber == null)
         {
-            Logger.Error($"Failed to add game to list from {imagePath}{Environment.NewLine}Id not present in image");
-            return null;
+            // let's try to find the ID manually
+            var id = ScanForId(imagePath);
+            if (id != null)
+            {
+                di.Data.SerialNumber = id;
+                di.DetectedDiscType = DetectedDiscType.SonyPS2;
+            }
+            else
+            {
+                Logger.Error(
+                    $"Failed to add game to list from {imagePath}{Environment.NewLine}Id not present in image");
+                return null;
+            }
         }
 
         var title = configuration.GetTitleFromCue ? Path.GetFileNameWithoutExtension(imagePath) : di.Data.GameTitle;
@@ -258,6 +271,43 @@ public static class Functions
         }
 
         return game;
+    }
+    
+    [GeneratedRegex(@"(SL[A-Z]{2}_\d+\.\d+)(?=;)")]
+    private static partial Regex IdPsRegex();
+
+    [GeneratedRegex("""FILE "(.+\.bin)" BINARY""")]
+    private static partial Regex BinFile();
+
+    private static string? ScanForId(string imagePath)
+    {
+        if (imagePath.EndsWith(".cue", StringComparison.OrdinalIgnoreCase))
+        {
+            var lines = File.ReadAllLines(imagePath);
+            var match = BinFile().Match(lines[0]);
+            if (match.Success)
+            {
+                var dir = Path.GetDirectoryName(imagePath);
+                var file = match.Groups[1].Value;
+                imagePath = Path.Join(dir, file);
+            }
+        }
+        using var fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read);
+        var buf = new Span<byte>(new byte[1024 * 8]);
+        const int backtrack = 15;
+        var read = fs.Read(buf);
+        while (read > 0 && read != backtrack)
+        {
+            var textId = Encoding.ASCII.GetString(buf);
+            var matches = IdPsRegex().Match(textId);
+            if (matches.Success)
+            {
+                return matches.Groups[1].Value.Replace('_', '-').Replace(".", "");
+            }
+            fs.Seek(-backtrack, SeekOrigin.Current);
+            read = fs.Read(buf);
+        }
+        return null;
     }
 
     public static void ProcessJson(Configuration configuration, Game game, Action<double> reportProgress)
