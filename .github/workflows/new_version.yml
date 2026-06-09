@@ -47,7 +47,7 @@ jobs:
         run: |
           dotnet build .\DiscTools\DiscTools\DiscTools.csproj -c Release
           dotnet build .\Avalonia.Labs\src\Avalonia.Labs.Gif\Avalonia.Labs.Gif.csproj -c Release
-          dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false
+          dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false --no-restore
       - name: Create artifact (win64, no dotnet)
         uses: thedoctor0/zip-release@0.7.6
         with:
@@ -63,7 +63,7 @@ jobs:
         run: |
           dotnet build .\DiscTools\DiscTools\DiscTools.csproj -c Release
           dotnet build .\Avalonia.Labs\src\Avalonia.Labs.Gif\Avalonia.Labs.Gif.csproj -c Release
-          dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained true
+          dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false --no-restore
       - name: Create artifact (win64, with dotnet)
         uses: thedoctor0/zip-release@0.7.6
         with:
@@ -79,7 +79,7 @@ jobs:
         run: |
           dotnet build .\DiscTools\DiscTools\DiscTools.csproj -c Release
           dotnet build .\Avalonia.Labs\src\Avalonia.Labs.Gif\Avalonia.Labs.Gif.csproj -c Release
-          dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained false
+          dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false --no-restore
       - name: Create artifact (linux64, no dotnet)
         uses: thedoctor0/zip-release@0.7.6
         with:
@@ -95,7 +95,7 @@ jobs:
         run: |
           dotnet build .\DiscTools\DiscTools\DiscTools.csproj -c Release
           dotnet build .\Avalonia.Labs\src\Avalonia.Labs.Gif\Avalonia.Labs.Gif.csproj -c Release
-          dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained true
+          dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false --no-restore
       - name: Create artifact (linux64, with dotnet)
         uses: thedoctor0/zip-release@0.7.6
         with:
