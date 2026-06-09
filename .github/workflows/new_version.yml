@@ -47,8 +47,7 @@ jobs:
         run: |
           dotnet nuget list source
           dotnet nuget config list
-          dotnet restore -v diag
-          dotnet --info
+          rm Avalonia.Labs/NuGet.Config
       - name: Build version (win64, no dotnet)
         run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false --property WarningLevel=0
       - name: Create artifact (win64, no dotnet)
