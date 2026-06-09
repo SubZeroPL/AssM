@@ -28,7 +28,7 @@ jobs:
       DOTNET_VERSION: '10.0'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           submodules: recursive
@@ -36,11 +36,21 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: | 
+            8.0.x
+            ${{ env.DOTNET_VERSION }}
       - name: Get version
         id: get_version
         run: echo "version=$((Select-Xml -Path .\$( $env:PROJECT_NAME ).csproj -XPath '/Project/PropertyGroup/AssemblyVersion').Node.InnerXML)" >> $env:GITHUB_OUTPUT
         shell: pwsh
+      - name: Build deps
+        run: |
+          cd DiscTools\DiscTools
+          dotnet build -c Release
+          cd ..\..
+          cd Avalonia.Labs\src\Avalonia.Labs.Gif
+          dotnet build -c Release
+          cd ..\..
       - name: Build version (win64, no dotnet)
         run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false
       - name: Create artifact (win64, no dotnet)
@@ -54,6 +64,14 @@ jobs:
         run: mv bin/Release/net${{ env.DOTNET_VERSION }}/win-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-win-x64.zip ./
       - name: Clean
         run: dotnet clean
+      - name: Build deps
+        run: |
+          cd DiscTools\DiscTools
+          dotnet build -c Release
+          cd ..\..
+          cd Avalonia.Labs\src\Avalonia.Labs.Gif
+          dotnet build -c Release
+          cd ..\..
       - name: Build version (win64, with dotnet)
         run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained true
       - name: Create artifact (win64, with dotnet)
@@ -67,6 +85,14 @@ jobs:
         run: mv bin/Release/net${{ env.DOTNET_VERSION }}/win-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}_with_dotnet-win-x64.zip ./
       - name: Clean
         run: dotnet clean
+      - name: Build deps
+        run: |
+          cd DiscTools\DiscTools
+          dotnet build -c Release
+          cd ..\..
+          cd Avalonia.Labs\src\Avalonia.Labs.Gif
+          dotnet build -c Release
+          cd ..\..
       - name: Build version (linux64, no dotnet)
         run: dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained false
       - name: Create artifact (linux64, no dotnet)
@@ -80,6 +106,14 @@ jobs:
         run: mv bin/Release/net${{ env.DOTNET_VERSION }}/linux-x64/publish/${{ env.PROJECT_NAME }}_${{ steps.get_version.outputs.version }}-linux-x64.zip ./
       - name: Clean
         run: dotnet clean
+      - name: Build deps
+        run: |
+          cd DiscTools\DiscTools
+          dotnet build -c Release
+          cd ..\..
+          cd Avalonia.Labs\src\Avalonia.Labs.Gif
+          dotnet build -c Release
+          cd ..\..
       - name: Build version (linux64, with dotnet)
         run: dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained true
       - name: Create artifact (linux64, with dotnet)
