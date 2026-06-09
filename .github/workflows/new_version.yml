@@ -74,7 +74,7 @@ jobs:
       - name: Clean
         run: dotnet clean
       - name: Build version (linux64, no dotnet)
-        run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false --property WarningLevel=0
+        run: dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained false --property WarningLevel=0
       - name: Create artifact (linux64, no dotnet)
         uses: thedoctor0/zip-release@0.7.6
         with:
@@ -87,7 +87,7 @@ jobs:
       - name: Clean
         run: dotnet clean
       - name: Build version (linux64, with dotnet)
-        run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained false --property WarningLevel=0
+        run: dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true --self-contained false --property WarningLevel=0
       - name: Create artifact (linux64, with dotnet)
         uses: thedoctor0/zip-release@0.7.6
         with:
