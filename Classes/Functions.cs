@@ -273,7 +273,7 @@ public static partial class Functions
         return game;
     }
     
-    [GeneratedRegex(@"(SL[A-Z]{2}_\d+\.\d+)(?=;)")]
+    [GeneratedRegex(@"(S[LC][A-Z]{2}_\d+\.\d+)(?=;)")]
     private static partial Regex IdPsRegex();
 
     [GeneratedRegex("""FILE "(.+\.bin)" BINARY""")]
