@@ -1,6 +1,6 @@
-# AssM - Arkadyzja savestates Manager
+# AssM – Arkadyzja savestates Manager
 
-It is a piece of software that assists in creating entries for [Arkadyzja savestates repository](https://github.com/ActionPL/duckstation_openbios_savestates). It allows creating and editing README files for games that will have savestates uploaded to the repository. Those savestates will then be available for [Arkadyzja](https://arkadyzja.honmaru.pl/).
+This is a piece of software that assists in creating entries for [Arkadyzja savestates repository](https://github.com/ActionPL/duckstation_openbios_savestates). It allows creating and editing README files for games that will have savestates uploaded to the repository. Those savestates will then be available for [Arkadyzja](https://arkadyzja.honmaru.pl/).
 
 ## ⚠️ Requirements
 For the application to work, [.NET Framework 10](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) is required. 
@@ -9,10 +9,10 @@ Application is developed and tested on Windows 11 OS. It should also work on Lin
 
 ## 📦 Releases
 Each release starting with 1.4.0 has four variants:
-- Windows x64 version with .NET 8 framework bundled (AssM_X.X.X_with_dotnet-win-x64.zip)
-- Windows x64 version without .NET 8 framework bundled (AssM_X.X.X-win-x64.zip)
-- Linux x64 version with .NET 8 framework bundled (AssM_X.X.X_with_dotnet-linux-x64.zip)
-- Linux x64 version without .NET 8 framework bundled (AssM_X.X.X-linux-x64.zip)
+- Windows x64 version with .NET 10 framework bundled (AssM_X.X.X_with_dotnet-win-x64.zip)
+- Windows x64 version without .NET 10 framework bundled (AssM_X.X.X-win-x64.zip)
+- Linux x64 version with .NET 10 framework bundled (AssM_X.X.X_with_dotnet-linux-x64.zip)
+- Linux x64 version without .NET 10 framework bundled (AssM_X.X.X-linux-x64.zip)
 
 _**Linux releases are highly experimental, use at your own risk!**_
 
